@@ -41,7 +41,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "prepack": "pnpm build",
     "release": "pnpm test && changeset publish",
-    "test": "pnpm build && node --test test",
+    "test": "pnpm build && node --test test/*.test.mjs",
     "type-check": "tsc --noEmit"
   },
   "publishConfig": {

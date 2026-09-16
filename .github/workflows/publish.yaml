@@ -29,5 +29,6 @@ jobs:
       - uses: changesets/action@v2
         with:
           publish-script: pnpm release
+          push-with-git-cli: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

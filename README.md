@@ -26,4 +26,16 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 ## Publisering
 
-Oppdater `version` i `package.json` og merge endringen til `main`. Kjør deretter workflowen `Publiser npm-pakke` manuelt fra GitHub Actions. Workflowen kjører typecheck og tester før publisering til GitHub Packages, og publisering feiler dersom versjonen allerede finnes.
+Legg til en changeset i hver PR som skal gi en ny pakkeversjon:
+
+```bash
+pnpm changeset
+```
+
+Velg `patch`, `minor` eller `major` og beskriv endringen. Når PR-en merges til `main`, oppretter eller oppdaterer workflowen `Versjoner og publiser npm-pakke` en versjons-PR. Når versjons-PR-en merges, kjører workflowen typecheck og tester før den publiserer til GitHub Packages.
+
+Repository settings må tillate at GitHub Actions oppretter pull requests.
+
+## 🤖 KI-assistanse
+
+Dette repoet bruker GitHub Copilot for kodegenerering og forslag.

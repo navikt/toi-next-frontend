@@ -2,8 +2,6 @@
   "description": "Felles frontend-infrastruktur for Team Toi",
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
-    "@navikt/ds-react": "^8.0.0",
-    "@navikt/next-logger": "^3.0.0",
     "@types/node": "^26.5.1",
     "@types/react": "^19.3.0",
     "react": "19.3.0",
@@ -24,10 +22,6 @@
       "import": "./dist/api/index.js",
       "types": "./dist/api/index.d.ts"
     },
-    "./logger": {
-      "import": "./dist/logger/index.js",
-      "types": "./dist/logger/index.d.ts"
-    },
     "./miljø": {
       "import": "./dist/miljø/index.js",
       "types": "./dist/miljø/index.d.ts"
@@ -39,10 +33,6 @@
     "./swr": {
       "import": "./dist/swr/index.js",
       "types": "./dist/swr/index.d.ts"
-    },
-    "./ui": {
-      "import": "./dist/ui/index.js",
-      "types": "./dist/ui/index.d.ts"
     }
   },
   "files": [
@@ -51,26 +41,9 @@
   "name": "@navikt/toi-next-frontend",
   "packageManager": "pnpm@12.4.1",
   "peerDependencies": {
-    "@navikt/ds-react": "^8.0.0",
-    "@navikt/next-logger": "^3.0.0",
     "react": "^19.0.0",
     "swr": "^2.0.0",
     "zod": "^4.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@navikt/ds-react": {
-      "optional": true
-    },
-    "@navikt/next-logger": {
-      "optional": true
-    }
-  },
-  "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json",
-    "prepack": "pnpm build",
-    "release": "pnpm test && changeset publish",
-    "test": "pnpm build && node --test test/*.test.mjs",
-    "type-check": "tsc --noEmit"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -78,6 +51,13 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/navikt/toi-next-frontend.git"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "release": "pnpm test && changeset publish",
+    "test": "pnpm build && node --test test/*.test.mjs",
+    "type-check": "tsc --noEmit"
   },
   "type": "module",
   "version": "0.1.2"

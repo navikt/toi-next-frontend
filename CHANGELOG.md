@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.3.1
+
+### Patch Changes
+
+- b7f3855: Bytt eksport-sti `/miljø` til ASCII `/miljo` for å unngå Unicode-normaliseringsproblemer i editorer og på tvers av operativsystemer.
+
 ## 0.3.0
 
 ### Minor Changes

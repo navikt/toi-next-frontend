@@ -8,6 +8,25 @@ import {
   hentEsKilder,
 } from '../dist/api/index.js';
 
+test('bruker global fetch som byttes ut etter at fetcher er opprettet', async () => {
+  const fetcher = createFetcher();
+  const original = globalThis.fetch;
+  let kaltUrl;
+  globalThis.fetch = async (url) => {
+    kaltUrl = String(url);
+    return new Response('{"ok":true}', {
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  try {
+    const resultat = await fetcher.get('/api/ressurs');
+    assert.deepEqual(resultat, { ok: true });
+    assert.equal(kaltUrl, '/api/ressurs');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test('legger til base-URL, standardvalg og JSON-body', async () => {
   let request;
   const fetcher = createFetcher({

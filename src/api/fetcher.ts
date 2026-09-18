@@ -194,7 +194,7 @@ export const hentEsFørsteKilde = (data: unknown): unknown =>
 
 export const createFetcher = ({
   baseUrl,
-  fetch: fetchImplementasjon = fetch,
+  fetch: fetchImplementasjon,
   standardvalg,
   timeoutMs,
   maxForsøk = 0,
@@ -202,6 +202,9 @@ export const createFetcher = ({
   lagNettverksfeil,
   loggValidering,
 }: FetcherKonfigurasjon = {}): Fetcher => {
+  // Resolveres ved kalltid slik at bytte av global fetch (testmocks, MSW) respekteres.
+  const gjørFetch = (url: string, init: RequestInit): Promise<Response> =>
+    (fetchImplementasjon ?? globalThis.fetch)(url, init);
   const validerSchema = <T>(schema: ZodType<T>, data: unknown): T => {
     const resultat = schema.safeParse(data);
     if (!resultat.success && loggValidering) {
@@ -225,7 +228,7 @@ export const createFetcher = ({
   ): Promise<Response> => {
     for (let forsøk = 0; forsøk <= maxForsøk; forsøk++) {
       try {
-        return await fetchImplementasjon(url, {
+        return await gjørFetch(url, {
           ...init,
           signal: byggSignal(init.signal, timeoutMs),
         });

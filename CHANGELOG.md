@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.2.0
+
+### Minor Changes
+
+- Legg til nye moduler for miljø-helpere (`/miljø`) og Umami-analyse (`/analyse`), samt utvid `Oborute` med scope, audience og internUrlWithoutBaseUrl.
+
 ## 0.1.2
 
 ### Patch Changes

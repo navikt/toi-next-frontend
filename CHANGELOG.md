@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.4.1
+
+### Patch Changes
+
+- 7e71236: Rett `createFetcher` så global `fetch` slås opp ved kalltid i stedet for ved opprettelse. Da respekteres utbytting av global fetch (testmocks og MSW) selv når fetcheren opprettes på modulnivå.
+
 ## 0.4.0
 
 ### Minor Changes

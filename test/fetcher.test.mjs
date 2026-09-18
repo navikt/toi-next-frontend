@@ -24,6 +24,25 @@ test('legger til base-URL, standardvalg og JSON-body', async () => {
   assert.equal(request.init.body, '{"etiketter":["ny"]}');
 });
 
+test('legger queryParams til URL uten å sende dem til fetch', async () => {
+  let request;
+  const fetcher = createFetcher({
+    fetch: async (url, init) => {
+      request = { url, init };
+      return new Response('{}', {
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  });
+
+  await fetcher.get('/ressurs?aktiv=true', {
+    queryParams: new URLSearchParams({ side: '2' }),
+  });
+
+  assert.equal(request.url, '/ressurs?aktiv=true&side=2');
+  assert.equal(request.init.queryParams, undefined);
+});
+
 test('gir ApiError med detaljene fra en feilrespons', async () => {
   const fetcher = createFetcher({
     fetch: async () =>

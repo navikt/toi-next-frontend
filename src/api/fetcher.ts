@@ -23,7 +23,9 @@ export class ApiError extends Error {
   }
 }
 
-export type Forespørselsvalg = Omit<RequestInit, 'body' | 'method'>;
+export type Forespørselsvalg = Omit<RequestInit, 'body' | 'method'> & {
+  queryParams?: URLSearchParams;
+};
 
 export type FetcherKonfigurasjon = {
   baseUrl?: string;
@@ -39,8 +41,19 @@ export type Fetcher = {
   delete<T>(url: string, valg?: Forespørselsvalg): Promise<T>;
 };
 
-const byggUrl = (baseUrl: string | undefined, url: string) =>
-  baseUrl ? new URL(url, baseUrl).toString() : url;
+const byggUrl = (
+  baseUrl: string | undefined,
+  url: string,
+  queryParams?: URLSearchParams,
+) => {
+  const fullUrl = baseUrl ? new URL(url, baseUrl).toString() : url;
+
+  if (!queryParams || queryParams.size === 0) {
+    return fullUrl;
+  }
+
+  return `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}${queryParams}`;
+};
 
 const lesRespons = async (response: Response): Promise<unknown> => {
   if (response.status === 204) {
@@ -79,13 +92,14 @@ export const createFetcher = ({
     body?: unknown,
     valg?: Forespørselsvalg,
   ): Promise<T> => {
-    const respons = await fetchImplementasjon(byggUrl(baseUrl, url), {
+    const { queryParams, ...requestValg } = valg ?? {};
+    const respons = await fetchImplementasjon(byggUrl(baseUrl, url, queryParams), {
       ...standardvalg,
-      ...valg,
+      ...requestValg,
       method,
       headers: {
         ...standardvalg?.headers,
-        ...valg?.headers,
+        ...requestValg.headers,
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
       ...(body === undefined ? {} : { body: serialiserBody(body) }),
@@ -94,7 +108,7 @@ export const createFetcher = ({
 
     if (!respons.ok) {
       throw new ApiError({
-        url: respons.url || byggUrl(baseUrl, url),
+        url: respons.url || byggUrl(baseUrl, url, queryParams),
         status: respons.status,
         statusText: respons.statusText,
         detaljer: data,

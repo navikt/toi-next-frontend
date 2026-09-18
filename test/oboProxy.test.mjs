@@ -67,3 +67,38 @@ test('bruker byggMålUrl, overstyrtBody og normaliserRespons', async () => {
   assert.equal(response.headers.get('x-normalisert'), 'ja');
   assert.equal(await response.text(), '{"ok":true}');
 });
+
+test('transformerHeaders endrer videresendte headere før Authorization settes', async () => {
+  let request;
+  globalThis.fetch = async (url, init) => {
+    request = { url, init };
+    return new Response('{}', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  const proxy = opprettOboProxy({
+    hentToken: async () => 'obo-token',
+    transformerHeaders: (headers) => {
+      headers.set('Content-Type', 'application/json');
+      headers.delete('cookie');
+      return headers;
+    },
+  });
+
+  await proxy(
+    {
+      apiUrl: 'https://api.nav.no',
+      apiRute: '/api',
+      internUrl: '/api/ressurs',
+    },
+    new Request('https://app.nav.no/api/ressurs', {
+      method: 'GET',
+      headers: { cookie: 'AMP_1=x', 'content-type': 'text/plain' },
+    }),
+  );
+
+  assert.equal(request.init.headers.get('cookie'), null);
+  assert.equal(request.init.headers.get('Content-Type'), 'application/json');
+  assert.equal(request.init.headers.get('Authorization'), 'Bearer obo-token');
+});

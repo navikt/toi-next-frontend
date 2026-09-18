@@ -21,6 +21,7 @@ export type OboProxyKonfigurasjon = {
     respons: Response,
     forespørsel: Request,
   ) => Response | Promise<Response>;
+  transformerHeaders?: (headers: Headers, forespørsel: Request) => Headers;
 };
 
 const standardFeilrespons = (beskrivelse: string, status: number) =>
@@ -43,6 +44,7 @@ export const opprettOboProxy = ({
   lagFeilrespons = standardFeilrespons,
   byggMålUrl = standardByggUrl,
   normaliserRespons,
+  transformerHeaders,
 }: OboProxyKonfigurasjon) => {
   return async (
     rute: Oborute,
@@ -65,7 +67,9 @@ export const opprettOboProxy = ({
       return lagFeilrespons('Kunne ikke hente OBO-token', 401);
     }
 
-    const headers = new Headers(forespørsel.headers);
+    const headers = transformerHeaders
+      ? transformerHeaders(new Headers(forespørsel.headers), forespørsel)
+      : new Headers(forespørsel.headers);
     headers.set('Authorization', `Bearer ${token}`);
     const harBody = !['GET', 'HEAD'].includes(forespørsel.method);
     const brukOverstyrtBody = harBody && overstyrtBody !== undefined;

@@ -155,7 +155,9 @@ test('validerSchema logger og returnerer data uten å kaste', () => {
 
 test('hentEsKilder og hentEsFørsteKilde mapper Elasticsearch-svar', () => {
   const svar = {
-    hits: { hits: [{ _source: { navn: 'Ada' } }, { _source: { navn: 'Ben' } }] },
+    hits: {
+      hits: [{ _source: { navn: 'Ada' } }, { _source: { navn: 'Ben' } }],
+    },
   };
   assert.deepEqual(hentEsKilder(svar), [{ navn: 'Ada' }, { navn: 'Ben' }]);
   assert.deepEqual(hentEsFørsteKilde(svar), { navn: 'Ada' });

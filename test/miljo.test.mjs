@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { erLokalt, erTestmodus, skalMocke } from '../dist/miljø/index.js';
+import { erLokalt, erTestmodus, skalMocke } from '../dist/miljo/index.js';
 
 const nullstill = () => {
   delete process.env.NEXT_PUBLIC_DEVELOPER;

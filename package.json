@@ -22,9 +22,9 @@
       "import": "./dist/api/index.js",
       "types": "./dist/api/index.d.ts"
     },
-    "./miljø": {
-      "import": "./dist/miljø/index.js",
-      "types": "./dist/miljø/index.d.ts"
+    "./miljo": {
+      "import": "./dist/miljo/index.js",
+      "types": "./dist/miljo/index.d.ts"
     },
     "./next": {
       "import": "./dist/next/index.js",

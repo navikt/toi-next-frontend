@@ -75,16 +75,19 @@ export const opprettOboProxy = ({
     }
 
     try {
-      const respons = await fetch(byggMålUrl(rute, forespørsel, overstyrtRute), {
-        method: forespørsel.method,
-        headers,
-        body: brukOverstyrtBody
-          ? JSON.stringify(overstyrtBody)
-          : harBody
-            ? forespørsel.body
-            : undefined,
-        ...(harBody && !brukOverstyrtBody ? { duplex: 'half' as never } : {}),
-      });
+      const respons = await fetch(
+        byggMålUrl(rute, forespørsel, overstyrtRute),
+        {
+          method: forespørsel.method,
+          headers,
+          body: brukOverstyrtBody
+            ? JSON.stringify(overstyrtBody)
+            : harBody
+              ? forespørsel.body
+              : undefined,
+          ...(harBody && !brukOverstyrtBody ? { duplex: 'half' as never } : {}),
+        },
+      );
 
       const passthrough = new Response(respons.body, {
         status: respons.status,

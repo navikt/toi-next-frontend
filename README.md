@@ -16,13 +16,13 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 ## Eksporter
 
-| Import                              | Innhold                                             |
-| ----------------------------------- | --------------------------------------------------- |
+| Import                              | Innhold                                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `@navikt/toi-next-frontend/api`     | `createFetcher` (retry, timeout, feil-/valideringsfabrikker), `ApiError`, `hentEsKilder`, `hentEsFørsteKilde` |
-| `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`        |
-| `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut` |
-| `@navikt/toi-next-frontend/miljø`   | `erLokalt`, `erTestmodus`, `skalMocke`              |
-| `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                      |
+| `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`                                                                  |
+| `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                           |
+| `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                        |
+| `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                |
 
 `react`, `swr` og `zod` er peer dependencies.
 

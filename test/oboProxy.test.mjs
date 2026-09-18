@@ -51,7 +51,11 @@ test('bruker byggMålUrl, overstyrtBody og normaliserRespons', async () => {
   });
 
   const response = await proxy(
-    { apiUrl: 'https://api.nav.no', apiRute: '/api', internUrl: '/api/ressurs' },
+    {
+      apiUrl: 'https://api.nav.no',
+      apiRute: '/api',
+      internUrl: '/api/ressurs',
+    },
     new Request('https://app.nav.no/api/ressurs', { method: 'POST' }),
     undefined,
     { navn: 'Ada' },

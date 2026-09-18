@@ -23,10 +23,8 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 | `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut` |
 | `@navikt/toi-next-frontend/miljø`   | `erLokalt`, `erTestmodus`, `skalMocke`              |
 | `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                      |
-| `@navikt/toi-next-frontend/ui`      | `Feilmelding`, `Sidelaster`                         |
-| `@navikt/toi-next-frontend/logger`  | `nextLoggerConfig`                                  |
 
-`react`, `swr` og `zod` er peer dependencies. `@navikt/ds-react` og `@navikt/next-logger` er valgfrie peer dependencies som kreves av henholdsvis `/ui` og `/logger`.
+`react`, `swr` og `zod` er peer dependencies.
 
 ## Publisering
 

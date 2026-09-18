@@ -19,7 +19,8 @@ const globalForMsw = globalThis as typeof globalThis & {
 };
 
 const reetablerMsw = (logg?: (melding: string) => void) => {
-  if (globalForMsw.__toiMswReinitializing || !globalForMsw.__toiMswListening) return;
+  if (globalForMsw.__toiMswReinitializing || !globalForMsw.__toiMswListening)
+    return;
 
   globalForMsw.__toiMswReinitializing = true;
   try {
@@ -40,7 +41,11 @@ const installerDefinePropertyGuard = (logg?: (melding: string) => void) => {
   globalForMsw.__toiMswOriginalDefineProperty = Object.defineProperty;
 
   Object.defineProperty = function (target, property, attributes) {
-    const resultat = globalForMsw.__toiMswOriginalDefineProperty!(target, property, attributes);
+    const resultat = globalForMsw.__toiMswOriginalDefineProperty!(
+      target,
+      property,
+      attributes,
+    );
 
     if (
       target === globalThis &&

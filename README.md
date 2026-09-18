@@ -16,10 +16,10 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 ## Eksporter
 
-| Import                           | Innhold                                       |
-| -------------------------------- | --------------------------------------------- |
-| `@navikt/toi-next-frontend/api`  | `createFetcher`, `ApiError` og Zod-validering |
-| `@navikt/toi-next-frontend/next` | `opprettOboProxy`, `startMswInstrumentering`  |
+| Import                           | Innhold                                             |
+| -------------------------------- | --------------------------------------------------- |
+| `@navikt/toi-next-frontend/api`  | `createFetcher`, `ApiError` og Zod-validering       |
+| `@navikt/toi-next-frontend/next` | `opprettOboProxy`, `startMswInstrumentering`        |
 | `@navikt/toi-next-frontend/swr`  | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut` |
 
 `react`, `swr` og `zod` er peer dependencies.

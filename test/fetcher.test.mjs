@@ -16,7 +16,9 @@ test('legger til base-URL, standardvalg og JSON-body', async () => {
     },
   });
 
-  const resultat = await fetcher.post('stillinger', { etiketter: new Set(['ny']) });
+  const resultat = await fetcher.post('stillinger', {
+    etiketter: new Set(['ny']),
+  });
 
   assert.deepEqual(resultat, { id: '1' });
   assert.equal(request.url, 'https://eksempel.nav.no/api/stillinger');
@@ -69,5 +71,7 @@ test('validerer respons med Zod', async () => {
       }),
   });
 
-  await assert.rejects(fetcher.getMedSchema(z.object({ id: z.string() }), '/ressurs'));
+  await assert.rejects(
+    fetcher.getMedSchema(z.object({ id: z.string() }), '/ressurs'),
+  );
 });

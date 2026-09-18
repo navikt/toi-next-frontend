@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.3.2
+
+### Patch Changes
+
+- daa820a: Legg til `default`-betingelse i alle export-stiene så pakken også kan brukes fra CommonJS-kontekst (f.eks. Playwright-tester som kompilerer til CJS).
+
 ## 0.3.1
 
 ### Patch Changes

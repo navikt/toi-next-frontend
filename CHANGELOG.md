@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.3.0
+
+### Minor Changes
+
+- 7877980: Utvid `createFetcher` med retry, timeout, injiserbare feil-/nettverksfeil-fabrikker, `skjulFeilmelding`, schema-validering med logging og Elasticsearch-hjelpere (`hentEsKilder`, `hentEsFørsteKilde`). Legg til `feilSkjulerInnhold` i `SWRLaster` og `byggMålUrl`, `overstyrtBody` og `normaliserRespons` i `opprettOboProxy`.
+
 ## 0.2.0
 
 ### Minor Changes

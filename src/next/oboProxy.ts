@@ -2,6 +2,9 @@ export type Oborute = {
   apiUrl: string;
   apiRute: string;
   internUrl: string;
+  scope?: string;
+  audience?: string;
+  internUrlWithoutBaseUrl?: string;
 };
 
 export type Tokenhenter = (forespørsel: Request) => Promise<string | undefined>;

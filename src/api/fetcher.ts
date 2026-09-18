@@ -35,7 +35,11 @@ export type FetcherKonfigurasjon = {
 
 export type Fetcher = {
   get<T>(url: string, valg?: Forespørselsvalg): Promise<T>;
-  getMedSchema<T>(schema: ZodType<T>, url: string, valg?: Forespørselsvalg): Promise<T>;
+  getMedSchema<T>(
+    schema: ZodType<T>,
+    url: string,
+    valg?: Forespørselsvalg,
+  ): Promise<T>;
   post<T>(url: string, body?: unknown, valg?: Forespørselsvalg): Promise<T>;
   put<T>(url: string, body?: unknown, valg?: Forespørselsvalg): Promise<T>;
   delete<T>(url: string, valg?: Forespørselsvalg): Promise<T>;
@@ -93,17 +97,20 @@ export const createFetcher = ({
     valg?: Forespørselsvalg,
   ): Promise<T> => {
     const { queryParams, ...requestValg } = valg ?? {};
-    const respons = await fetchImplementasjon(byggUrl(baseUrl, url, queryParams), {
-      ...standardvalg,
-      ...requestValg,
-      method,
-      headers: {
-        ...standardvalg?.headers,
-        ...requestValg.headers,
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    const respons = await fetchImplementasjon(
+      byggUrl(baseUrl, url, queryParams),
+      {
+        ...standardvalg,
+        ...requestValg,
+        method,
+        headers: {
+          ...standardvalg?.headers,
+          ...requestValg.headers,
+          ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        },
+        ...(body === undefined ? {} : { body: serialiserBody(body) }),
       },
-      ...(body === undefined ? {} : { body: serialiserBody(body) }),
-    });
+    );
     const data = await lesRespons(respons);
 
     if (!respons.ok) {
@@ -120,7 +127,8 @@ export const createFetcher = ({
 
   return {
     get: (url, valg) => forespørsel(url, 'GET', undefined, valg),
-    getMedSchema: async (schema, url, valg) => schema.parse(await forespørsel(url, 'GET', undefined, valg)),
+    getMedSchema: async (schema, url, valg) =>
+      schema.parse(await forespørsel(url, 'GET', undefined, valg)),
     post: (url, body, valg) => forespørsel(url, 'POST', body, valg),
     put: (url, body, valg) => forespørsel(url, 'PUT', body, valg),
     delete: (url, valg) => forespørsel(url, 'DELETE', undefined, valg),

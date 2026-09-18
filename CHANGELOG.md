@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.4.0
+
+### Minor Changes
+
+- fac3205: Legg til `transformerHeaders`-hook i `opprettOboProxy` så konsumenter kan justere videresendte headere (f.eks. filtrere cookies) uten å rekonstruere forespørselen. Dette lar Next.js-apper sende `NextRequest` direkte inn i proxyen.
+
 ## 0.3.2
 
 ### Patch Changes

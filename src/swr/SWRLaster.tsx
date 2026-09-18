@@ -11,6 +11,7 @@ export type SWRLasterProps<T extends unknown[]> = {
   renderFeil?: (feil: Error) => ReactNode;
   visLoaderUnderValidering?: boolean;
   tillatDelvisData?: boolean;
+  feilSkjulerInnhold?: boolean;
   children: (...data: T) => ReactNode;
 };
 
@@ -20,6 +21,7 @@ export const SWRLaster = <T extends unknown[]>({
   renderFeil,
   visLoaderUnderValidering = false,
   tillatDelvisData = false,
+  feilSkjulerInnhold = false,
   children,
 }: SWRLasterProps<T>): ReactNode => {
   const lasterData = hooks.some(
@@ -40,6 +42,10 @@ export const SWRLaster = <T extends unknown[]>({
 
   if (!harData) {
     return feil && renderFeil ? renderFeil(feil) : null;
+  }
+
+  if (feil && feilSkjulerInnhold) {
+    return renderFeil ? renderFeil(feil) : null;
   }
 
   const innhold = children(...(hooks.map((hook) => hook?.data) as T));

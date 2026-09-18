@@ -18,7 +18,7 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 | Import                              | Innhold                                             |
 | ----------------------------------- | --------------------------------------------------- |
-| `@navikt/toi-next-frontend/api`     | `createFetcher`, `ApiError` og Zod-validering       |
+| `@navikt/toi-next-frontend/api`     | `createFetcher` (retry, timeout, feil-/valideringsfabrikker), `ApiError`, `hentEsKilder`, `hentEsFørsteKilde` |
 | `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`        |
 | `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut` |
 | `@navikt/toi-next-frontend/miljø`   | `erLokalt`, `erTestmodus`, `skalMocke`              |

@@ -102,3 +102,28 @@ test('transformerHeaders endrer videresendte headere før Authorization settes',
   assert.equal(request.init.headers.get('Content-Type'), 'application/json');
   assert.equal(request.init.headers.get('Authorization'), 'Bearer obo-token');
 });
+
+test('mockBaseUrl ruter til mock uten apiUrl og bruker original pathname', async () => {
+  let request;
+  globalThis.fetch = async (url, init) => {
+    request = { url, init };
+    return new Response('{}', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  const proxy = opprettOboProxy({
+    hentToken: async () => 'obo-token',
+    mockBaseUrl: 'http://mock-api',
+  });
+
+  const response = await proxy(
+    { apiUrl: '', apiRute: '/api', internUrl: '/api/ressurs' },
+    new Request('https://app.nav.no/api/ressurs/1?utvid=true', {
+      method: 'GET',
+    }),
+  );
+
+  assert.equal(request.url, 'http://mock-api/api/ressurs/1?utvid=true');
+  assert.equal(response.status, 200);
+});

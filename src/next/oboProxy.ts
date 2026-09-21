@@ -22,6 +22,7 @@ export type OboProxyKonfigurasjon = {
     forespørsel: Request,
   ) => Response | Promise<Response>;
   transformerHeaders?: (headers: Headers, forespørsel: Request) => Headers;
+  mockBaseUrl?: string;
 };
 
 const standardFeilrespons = (beskrivelse: string, status: number) =>
@@ -45,6 +46,7 @@ export const opprettOboProxy = ({
   byggMålUrl = standardByggUrl,
   normaliserRespons,
   transformerHeaders,
+  mockBaseUrl,
 }: OboProxyKonfigurasjon) => {
   return async (
     rute: Oborute,
@@ -52,7 +54,7 @@ export const opprettOboProxy = ({
     overstyrtRute?: string,
     overstyrtBody?: Record<string, unknown>,
   ): Promise<Response> => {
-    if (!rute.apiUrl) {
+    if (!mockBaseUrl && !rute.apiUrl) {
       return lagFeilrespons('Ingen URL oppgitt for proxy', 500);
     }
 
@@ -78,20 +80,21 @@ export const opprettOboProxy = ({
       headers.set('Content-Type', 'application/json');
     }
 
+    const målUrl = mockBaseUrl
+      ? `${mockBaseUrl}${new URL(forespørsel.url).pathname}${new URL(forespørsel.url).search}`
+      : byggMålUrl(rute, forespørsel, overstyrtRute);
+
     try {
-      const respons = await fetch(
-        byggMålUrl(rute, forespørsel, overstyrtRute),
-        {
-          method: forespørsel.method,
-          headers,
-          body: brukOverstyrtBody
-            ? JSON.stringify(overstyrtBody)
-            : harBody
-              ? forespørsel.body
-              : undefined,
-          ...(harBody && !brukOverstyrtBody ? { duplex: 'half' as never } : {}),
-        },
-      );
+      const respons = await fetch(målUrl, {
+        method: forespørsel.method,
+        headers,
+        body: brukOverstyrtBody
+          ? JSON.stringify(overstyrtBody)
+          : harBody
+            ? forespørsel.body
+            : undefined,
+        ...(harBody && !brukOverstyrtBody ? { duplex: 'half' as never } : {}),
+      });
 
       const passthrough = new Response(respons.body, {
         status: respons.status,

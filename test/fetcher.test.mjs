@@ -50,6 +50,70 @@ test('legger til base-URL, standardvalg og JSON-body', async () => {
   assert.equal(request.init.body, '{"etiketter":["ny"]}');
 });
 
+test('delete legger til base-URL, standardvalg og JSON-body', async () => {
+  let request;
+  const fetcher = createFetcher({
+    baseUrl: 'https://eksempel.nav.no/api/',
+    standardvalg: { credentials: 'include' },
+    fetch: async (url, init) => {
+      request = { url, init };
+      return new Response(null, { status: 204 });
+    },
+  });
+
+  const resultat = await fetcher.delete('stillinger', { felt: 'verdi' });
+
+  assert.equal(resultat, undefined);
+  assert.equal(request.url, 'https://eksempel.nav.no/api/stillinger');
+  assert.equal(request.init.method, 'DELETE');
+  assert.equal(request.init.credentials, 'include');
+  assert.equal(request.init.headers['Content-Type'], 'application/json');
+  assert.equal(request.init.body, '{"felt":"verdi"}');
+});
+
+test('delete uten body sender ikke body eller Content-Type', async () => {
+  let request;
+  const fetcher = createFetcher({
+    fetch: async (url, init) => {
+      request = { url, init };
+      return new Response(null, { status: 204 });
+    },
+  });
+
+  await fetcher.delete('/ressurs');
+
+  assert.equal(request.url, '/ressurs');
+  assert.equal(request.init.method, 'DELETE');
+  assert.equal(Object.hasOwn(request.init, 'body'), false);
+  assert.equal(new Headers(request.init.headers).has('Content-Type'), false);
+});
+
+test('delete bruker queryParams fra tredje argument med og uten body', async () => {
+  let request;
+  const fetcher = createFetcher({
+    fetch: async (url, init) => {
+      request = { url, init };
+      return new Response(null, { status: 204 });
+    },
+  });
+
+  for (const body of [undefined, { felt: 'verdi' }]) {
+    await fetcher.delete('/ressurs?aktiv=true', body, {
+      queryParams: new URLSearchParams({ side: '2' }),
+    });
+
+    assert.equal(request.url, '/ressurs?aktiv=true&side=2');
+    assert.equal(request.init.method, 'DELETE');
+    assert.equal(request.init.queryParams, undefined);
+    assert.equal(request.init.body, JSON.stringify(body));
+    assert.equal(Object.hasOwn(request.init, 'body'), body !== undefined);
+    assert.equal(
+      new Headers(request.init.headers).get('Content-Type'),
+      body === undefined ? null : 'application/json',
+    );
+  }
+});
+
 test('legger queryParams til URL uten å sende dem til fetch', async () => {
   let request;
   const fetcher = createFetcher({

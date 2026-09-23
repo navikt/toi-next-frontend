@@ -62,7 +62,7 @@ export type Fetcher = {
   get<T>(url: string, valg?: Forespørselsvalg): Promise<T>;
   post<T>(url: string, body?: unknown, valg?: Forespørselsvalg): Promise<T>;
   put<T>(url: string, body?: unknown, valg?: Forespørselsvalg): Promise<T>;
-  delete<T>(url: string, valg?: Forespørselsvalg): Promise<T>;
+  delete<T>(url: string, body?: unknown, valg?: Forespørselsvalg): Promise<T>;
   getMedSchema<T>(
     schema: ZodType<T>,
     url: string,
@@ -285,7 +285,7 @@ export const createFetcher = ({
     get: (url, valg) => forespørsel(url, 'GET', undefined, valg),
     post: (url, body, valg) => forespørsel(url, 'POST', body, valg),
     put: (url, body, valg) => forespørsel(url, 'PUT', body, valg),
-    delete: (url, valg) => forespørsel(url, 'DELETE', undefined, valg),
+    delete: (url, body, valg) => forespørsel(url, 'DELETE', body, valg),
     getMedSchema: async (schema, url, valg) =>
       schema.parse(await forespørsel(url, 'GET', undefined, valg)),
     validerSchema,

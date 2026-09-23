@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.6.0
+
+### Minor Changes
+
+- 486424d: delete() på Fetcher støtter nå en valgfri JSON-body
+
 ## 0.5.0
 
 ### Minor Changes

@@ -23,6 +23,7 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 | `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                           |
 | `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                        |
 | `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                |
+| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse` (Nais APM uten avhengighet til `@nais/apm`)                    |
 
 `react`, `swr` og `zod` er peer dependencies.
 

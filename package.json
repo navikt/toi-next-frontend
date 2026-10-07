@@ -20,6 +20,11 @@
       "import": "./dist/analyse/index.js",
       "default": "./dist/analyse/index.js"
     },
+    "./apm": {
+      "types": "./dist/apm/index.d.ts",
+      "import": "./dist/apm/index.js",
+      "default": "./dist/apm/index.js"
+    },
     "./api": {
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.js",

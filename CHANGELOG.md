@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.7.0
+
+### Minor Changes
+
+- c8f286f: Legg til `/apm` med `lagApmFeilrapportering` (`rapporterFeil`, `rapporterApiFeil`) og `filtrerApmHendelse` for Nais APM. Pakken avhenger ikke av `@nais/apm`; appen sender inn `captureException`.
+
 ## 0.6.0
 
 ### Minor Changes

@@ -1,7 +1,9 @@
 {
   "description": "Felles frontend-infrastruktur for Team Toi",
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@changesets/cli": "^3.0.3",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^26.5.1",
     "@types/react": "^19.3.0",
     "react": "19.3.0",
@@ -14,6 +16,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./a11y": {
+      "types": "./dist/a11y/index.d.ts",
+      "import": "./dist/a11y/index.js",
+      "default": "./dist/a11y/index.js"
     },
     "./analyse": {
       "types": "./dist/analyse/index.d.ts",
@@ -52,9 +59,19 @@
   "name": "@navikt/toi-next-frontend",
   "packageManager": "pnpm@12.4.1",
   "peerDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.50.0",
     "react": "^19.0.0",
     "swr": "^2.0.0",
     "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@axe-core/playwright": {
+      "optional": true
+    },
+    "@playwright/test": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

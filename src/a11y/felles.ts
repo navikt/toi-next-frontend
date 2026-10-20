@@ -66,16 +66,45 @@ export async function installerSidehjelpere(page: Page): Promise<void> {
   });
 }
 
-/** Gir ResizeObserver, React og CSS tid til å tilpasse seg en endring. */
-export async function ventPåOmlayout(page: Page, ms = 250): Promise<void> {
+/**
+ * Venter til DOM og størrelser har vært uendret i `stabilMs`. JS som reagerer på
+ * resize eller endret skriftstørrelse (f.eks. React med ResizeObserver) kan endre
+ * siden flere hundre millisekunder etter selve endringen. Gir opp etter `maksMs`
+ * på sider som aldri blir rolige.
+ */
+export async function ventTilStabilLayout(
+  page: Page,
+  { stabilMs = 600, maksMs = 4000 } = {},
+): Promise<void> {
   await page.evaluate(
-    (venteMs) =>
-      new Promise<void>((resolve) =>
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => setTimeout(resolve, venteMs)),
-        ),
-      ),
-    ms,
+    ({ stabil, maks }) =>
+      new Promise<void>((resolve) => {
+        let ro: ReturnType<typeof setTimeout> | undefined;
+        const ferdig = () => {
+          mutasjoner.disconnect();
+          størrelser.disconnect();
+          clearTimeout(ro);
+          clearTimeout(grense);
+          resolve();
+        };
+        const nullstill = () => {
+          clearTimeout(ro);
+          ro = setTimeout(ferdig, stabil);
+        };
+        const mutasjoner = new MutationObserver(nullstill);
+        mutasjoner.observe(document.documentElement, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          characterData: true,
+        });
+        const størrelser = new ResizeObserver(nullstill);
+        størrelser.observe(document.documentElement);
+        størrelser.observe(document.body);
+        const grense = setTimeout(ferdig, maks);
+        requestAnimationFrame(() => requestAnimationFrame(nullstill));
+      }),
+    { stabil: stabilMs, maks: maksMs },
   );
 }
 

@@ -7,6 +7,7 @@ import {
   analyserTekstforstørrelse,
   analyserVisningsretning,
   formaterTastaturfunn,
+  sjekkReflow,
 } from '../dist/a11y/index.js';
 
 const nettleser = await chromium.launch().catch(() => undefined);
@@ -215,6 +216,45 @@ test(
     assert.equal(dialogfunn.length, 1, formaterTastaturfunn(dialogfunn));
     assert.equal(dialogfunn[0].kriterium, '3.2.1');
     assert.match(dialogfunn[0].element, /åpnet en dialog/);
+  },
+);
+
+test(
+  'reflow venter til layouten er stabil (JS som tilpasser seg etter resize)',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySide(
+      t,
+      `<main><p>Innhold</p></main>
+     <script>
+       addEventListener('resize', () => setTimeout(() => {
+         if (innerWidth < 400 && !document.getElementById('bred')) {
+           document.querySelector('main').insertAdjacentHTML('beforeend', '<div id="bred" style="width:540px">Bred</div>');
+         }
+       }, 400));
+     </script>`,
+    );
+    await assert.rejects(sjekkReflow(page), /WCAG 1\.4\.10/);
+    assert.deepEqual(page.viewportSize(), { width: 1000, height: 700 });
+  },
+);
+
+test(
+  'tekstforstørrelse venter til layouten er stabil',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySide(
+      t,
+      `<main><div id="boks" style="width:300px;height:3rem;overflow:hidden">Kort tekst</div></main>
+     <script>
+       new ResizeObserver(() => setTimeout(() => {
+         const boks = document.getElementById('boks');
+         if (parseFloat(getComputedStyle(document.documentElement).fontSize) > 20) boks.style.height = '24px';
+       }, 500)).observe(document.documentElement);
+     </script>`,
+    );
+    const funn = await analyserTekstforstørrelse(page);
+    assert.equal(funn.length, 1, funn.join('\n'));
   },
 );
 

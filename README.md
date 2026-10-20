@@ -76,7 +76,14 @@ tilgjengelighetstest(test, { utvidet: true });
 | `tastatur`          | 2.1.1, 2.1.2, 2.4.7, 3.2.1 | Klikkbare elementer som ikke kan nås med Tab, tastaturfeller, manglende synlig fokus og kontekstendring ved fokus        |
 | `mørkModus`         | 1.4.3                      | Funksjon som slår på mørk modus. axe kjøres da på nytt                                                                   |
 
-Hvert valg kan også slås av med `false`, for eksempel `{ utvidet: true, reflow: false }` i en app som ennå ikke tåler 320 px. Feil fra alle sjekkene samles i én melding, og hver sjekk vises som eget steg i Playwright-rapporten. Testen får tredoblet tidsgrense (`test.slow()`) når mer enn én sjekk kjører.
+Sjekkene som bare er slått på via `utvidet`, kjøres i en egen test, «Tilgjengelighet – utvidede sjekker», tagget både `@a11y` og `@a11y-utvidet`. Dermed kan axe stoppe deploy mens de utvidede funnene rettes:
+
+```yaml
+playwright-command: 'pnpm run test --grep-invert @a11y-utvidet'
+a11y-command: 'pnpm run test:a11y-utvidet' # playwright test --grep @a11y-utvidet --project='chromium*'
+```
+
+Sjekker som settes eksplisitt, for eksempel `{ utvidet: true, reflow: true }`, kjøres i hovedtesten sammen med axe. `false` slår en sjekk av, for eksempel `{ utvidet: true, reflow: false }` i en app som ennå ikke tåler 320 px. Feilene fra alle sjekkene i en test samles i én melding, og hver sjekk vises som eget steg i Playwright-rapporten. Testen får tredoblet tidsgrense (`test.slow()`) når den kjører mer enn to sjekker.
 
 - **Avkuttet tekst** betyr tekst som havner utenfor et element med `overflow: hidden/clip`. Bare tekst som blir avkuttet på grunn av endringen, rapporteres. Tekst i `px` skaleres ikke av tekstforstørrelsen.
 - **Synlig fokus** sammenlignes med skjermbilder av elementet med og uten tastaturfokus. Fokusmarkering på en forelder (`:focus-within`) godtas.

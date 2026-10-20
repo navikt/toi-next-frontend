@@ -2,7 +2,7 @@ import {
   formaterFunn,
   installerSidehjelpere,
   type SideVindu,
-  ventPåOmlayout,
+  ventTilStabilLayout,
 } from './felles.js';
 import { expect, type Page } from '@playwright/test';
 
@@ -113,14 +113,15 @@ async function finnNyAvkuttetTekst(
   tilbakestill: () => Promise<void>,
 ): Promise<string[]> {
   await installerSidehjelpere(page);
+  await ventTilStabilLayout(page);
   await page.evaluate(målAvkuttetTekst, 'før' as Måling);
   await endre();
   try {
-    await ventPåOmlayout(page);
+    await ventTilStabilLayout(page);
     return await page.evaluate(målAvkuttetTekst, 'etter' as Måling);
   } finally {
     await tilbakestill();
-    await ventPåOmlayout(page, 0);
+    await ventTilStabilLayout(page);
   }
 }
 

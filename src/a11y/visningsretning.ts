@@ -1,4 +1,4 @@
-import { formaterFunn, ventPåOmlayout } from './felles.js';
+import { formaterFunn, ventTilStabilLayout } from './felles.js';
 import { expect, type Page } from '@playwright/test';
 
 export const VISNINGSRETNINGER = {
@@ -13,7 +13,7 @@ export async function analyserVisningsretning(page: Page): Promise<string[]> {
   try {
     for (const [navn, størrelse] of Object.entries(VISNINGSRETNINGER)) {
       await page.setViewportSize(størrelse);
-      await ventPåOmlayout(page);
+      await ventTilStabilLayout(page);
       const status = await page.evaluate(() => {
         const innhold = document.querySelector('main') ?? document.body;
         const boks = innhold.getBoundingClientRect();
@@ -40,7 +40,10 @@ export async function analyserVisningsretning(page: Page): Promise<string[]> {
       if (status.rotert) funn.push(`Innholdet er rotert i ${navn} visning`);
     }
   } finally {
-    if (opprinnelig) await page.setViewportSize(opprinnelig);
+    if (opprinnelig) {
+      await page.setViewportSize(opprinnelig);
+      await ventTilStabilLayout(page);
+    }
   }
   return funn;
 }

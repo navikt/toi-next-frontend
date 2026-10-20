@@ -8,6 +8,30 @@ import {
   type TestInfo,
   type TestType,
 } from '@playwright/test';
+import { sjekkTastatur, type Tastaturvalg } from './tastatur.js';
+import { sjekkTekstavstand, sjekkTekstforstørrelse } from './tekst.js';
+import { sjekkVisningsretning } from './visningsretning.js';
+
+export {
+  analyserTastatur,
+  formaterTastaturfunn,
+  sjekkTastatur,
+  type Tastaturfunn,
+  type Tastaturresultat,
+  type Tastaturvalg,
+} from './tastatur.js';
+export {
+  analyserTekstavstand,
+  analyserTekstforstørrelse,
+  sjekkTekstavstand,
+  sjekkTekstforstørrelse,
+  TEKSTAVSTAND_CSS,
+} from './tekst.js';
+export {
+  analyserVisningsretning,
+  sjekkVisningsretning,
+  VISNINGSRETNINGER,
+} from './visningsretning.js';
 
 export type Axeresultat = Awaited<ReturnType<AxeBuilder['analyze']>>;
 export type Axebrudd = Axeresultat['violations'][number];
@@ -160,13 +184,37 @@ export async function sjekkReflow(page: Page): Promise<void> {
 }
 
 export type Tilgjengelighetstestvalg = Tilgjengelighetsvalg & {
-  /** Sjekk også WCAG 1.4.10 Reflow. */
+  /**
+   * Slår på alle sjekkene under: reflow, tekstforstørrelse, tekstavstand,
+   * visningsretning og tastatur. Hver kan slås av enkeltvis med false.
+   */
+  utvidet?: boolean;
+  /** WCAG 1.4.10 Reflow. */
   reflow?: boolean;
+  /** WCAG 1.4.4 Endring av tekststørrelse. */
+  tekstforstørrelse?: boolean;
+  /** WCAG 1.4.12 Tekstavstand. */
+  tekstavstand?: boolean;
+  /** WCAG 1.3.4 Visningsretning. */
+  visningsretning?: boolean;
+  /** WCAG 2.1.1, 2.1.2, 2.4.7 og 3.2.1. */
+  tastatur?: boolean | Tastaturvalg;
+  /** Slår på mørk modus og kjører axe på nytt (WCAG 1.4.3 i mørk modus). */
+  mørkModus?: (page: Page) => Promise<void>;
+};
+
+const feilmelding = (feil: unknown) => {
+  if (!(feil instanceof Error)) return String(feil);
+  // Diffen fra expect gjentar bare listen i meldingen over, så den tas ikke med.
+  return feil.message
+    .replace(/\u001b\[[0-9;]*m/g, '')
+    .split(/\n\s*expect\(|\n\nCall log:/)[0]
+    .trim();
 };
 
 /**
- * Registrerer en test som kjører axe mot siden `beforeEach` har åpnet.
- * Kjøres kun i Chromium, siden axe-resultatene er DOM-baserte.
+ * Registrerer en test som kjører axe mot siden `beforeEach` har åpnet, og
+ * eventuelt de utvidede sjekkene. Kjøres kun i Chromium.
  */
 export const tilgjengelighetstest = <
   T extends PlaywrightTestArgs,
@@ -180,7 +228,58 @@ export const tilgjengelighetstest = <
     { tag: TILGJENGELIGHETSTAG },
     async ({ page, browserName }) => {
       test.skip(browserName !== 'chromium', 'Axe kjøres kun i Chromium');
-      await sjekkTilgjengelighet(page, valg, test.info());
-      if (valg.reflow) await sjekkReflow(page);
+      const info = test.info();
+      const på = (verdi: boolean | Tastaturvalg | undefined) =>
+        verdi === undefined ? (valg.utvidet ?? false) : verdi !== false;
+
+      const sjekker: [string, () => Promise<unknown>][] = [
+        ['axe (WCAG 2.1 A/AA)', () => sjekkTilgjengelighet(page, valg, info)],
+      ];
+      if (på(valg.reflow))
+        sjekker.push(['Reflow (1.4.10)', () => sjekkReflow(page)]);
+      if (på(valg.tekstforstørrelse)) {
+        sjekker.push([
+          'Tekstforstørrelse (1.4.4)',
+          () => sjekkTekstforstørrelse(page),
+        ]);
+      }
+      if (på(valg.tekstavstand)) {
+        sjekker.push(['Tekstavstand (1.4.12)', () => sjekkTekstavstand(page)]);
+      }
+      if (på(valg.visningsretning)) {
+        sjekker.push([
+          'Visningsretning (1.3.4)',
+          () => sjekkVisningsretning(page),
+        ]);
+      }
+      if (på(valg.tastatur)) {
+        const tastaturvalg =
+          typeof valg.tastatur === 'object' ? valg.tastatur : {};
+        sjekker.push([
+          'Tastatur (2.1.1, 2.1.2, 2.4.7, 3.2.1)',
+          () => sjekkTastatur(page, tastaturvalg, info),
+        ]);
+      }
+      const mørkModus = valg.mørkModus;
+      if (mørkModus) {
+        sjekker.push([
+          'Mørk modus: axe',
+          async () => {
+            await mørkModus(page);
+            await sjekkTilgjengelighet(page, valg, info);
+          },
+        ]);
+      }
+      if (sjekker.length > 2) test.slow();
+
+      const feil: string[] = [];
+      for (const [navn, kjør] of sjekker) {
+        try {
+          await test.step(navn, kjør, { box: true });
+        } catch (e) {
+          feil.push(`▶ ${navn}\n${feilmelding(e)}`);
+        }
+      }
+      if (feil.length > 0) throw new Error(feil.join('\n\n'));
     },
   );

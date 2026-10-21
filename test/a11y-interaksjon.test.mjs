@@ -212,6 +212,28 @@ test(
 );
 
 test(
+  'skjemafeil: godtar gruppe med feil der meldingen er koblet til feltene',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySide(
+      t,
+      `<form onsubmit="event.preventDefault();
+          document.getElementById('gruppe').setAttribute('aria-invalid', 'true');
+          document.getElementById('ja').setAttribute('aria-describedby', 'gruppe-feil');
+          document.getElementById('gruppe-feil').hidden = false;">
+         <fieldset id="gruppe"><legend>Godtar du vilkårene?</legend>
+           <input type="checkbox" id="ja"><label for="ja">Ja</label>
+           <div id="gruppe-feil" aria-live="polite" hidden><p>Du må huke av</p></div>
+         </fieldset>
+         <button id="send">Send</button>
+       </form>`,
+    );
+    const funn = await analyserSkjemafeil(page, page.locator('#send'));
+    assert.deepEqual(funn, []);
+  },
+);
+
+test(
   'skjemafeil: finner skjema uten markering av feil',
   { skip: hopp },
   async (t) => {

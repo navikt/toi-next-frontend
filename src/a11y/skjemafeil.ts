@@ -60,8 +60,20 @@ export async function analyserSkjemafeil(
     }
 
     for (const felt of ugyldige) {
-      const meldinger = (felt.getAttribute('aria-describedby') ?? '')
-        .split(/\s+/)
+      // Aksel markerer fieldset/gruppe med aria-invalid og kobler feilmeldingen til feltene i gruppen.
+      const erGruppe = felt.matches(
+        'fieldset, [role="group"], [role="radiogroup"]',
+      );
+      const kilder = erGruppe
+        ? [
+            felt,
+            ...felt.querySelectorAll('input, select, textarea, [role="radio"]'),
+          ]
+        : [felt];
+      const meldinger = kilder
+        .flatMap((kilde) =>
+          (kilde.getAttribute('aria-describedby') ?? '').split(/\s+/),
+        )
         .map((id) => (id ? document.getElementById(id) : null))
         .filter((e): e is HTMLElement => !!e && synlig(e) && !!tekst(e));
       if (meldinger.length === 0) {

@@ -1,6 +1,23 @@
 // Samme verdi som CONSOLE_ERROR_PREFIX i @nais/apm; `{` betyr at logger.error fikk et objekt uten Error.
 const SYNTETISK_LOGGERFEIL_PREFIX = 'console.error: {';
 
+/** Adresser til Dekoratøren. Brukes i `faro.ignoreUrls` og for å forkaste feil fra Dekoratøren. */
+export const DEKORATØR_URLER: readonly RegExp[] = [
+  /^https:\/\/cdn\.nav\.no\/personbruker\/nav-dekoratoren\//,
+  /^https:\/\/dekoratoren\.ekstern\.dev\.nav\.no\//,
+  /^https:\/\/dekoratoren-beta\.intern\.dev\.nav\.no\//,
+  /^https:\/\/dekoratoren-beta-tms\.intern\.dev\.nav\.no\//,
+  /^https:\/\/www\.nav\.no\/dekoratoren\//,
+];
+
+// Feil fra nettleseren eller utvidelser, ikke fra koden vår.
+const NETTLESERSTØY = [
+  /window\.ethereum/, // Krypto-lommebok i Brave
+  /^Script error\.?$/, // Skript fra et annet domene, uten detaljer
+];
+
+const MAKS_KALLSTAKK = /Maximum call stack size exceeded/;
+
 export interface ApmFeilkontekst {
   statuskode?: number;
   url?: string;
@@ -22,6 +39,41 @@ export interface ApmFeilrapporteringValg {
 interface ApmHendelse {
   type: string;
   payload: object;
+  meta?: { page?: { url?: string } };
+}
+
+interface Stakkramme {
+  filename?: string;
+}
+
+function utenSøkOgAnker(url: string): string {
+  return url.split(/[?#]/)[0];
+}
+
+function sideadresse(hendelse: ApmHendelse): string | undefined {
+  const url =
+    hendelse.meta?.page?.url ??
+    (typeof window !== 'undefined' ? window.location?.href : undefined);
+  return url ? utenSøkOgAnker(url) : undefined;
+}
+
+function kommerFraDekoratøren(rammer: Stakkramme[]): boolean {
+  return rammer.some(
+    ({ filename }) =>
+      typeof filename === 'string' &&
+      DEKORATØR_URLER.some((url) => url.test(filename)),
+  );
+}
+
+function pekerBareTilSiden(rammer: Stakkramme[], side: string | undefined): boolean {
+  return (
+    side !== undefined &&
+    rammer.length > 0 &&
+    rammer.every(
+      ({ filename }) =>
+        typeof filename === 'string' && utenSøkOgAnker(filename) === side,
+    )
+  );
 }
 
 function lagEndepunktNøkkel(url: string): string {
@@ -71,10 +123,16 @@ export function filtrerApmHendelse<T extends ApmHendelse>(hendelse: T): T | null
   const payload = hendelse.payload as {
     value?: unknown;
     context?: Record<string, unknown>;
+    stacktrace?: { frames?: Stakkramme[] };
   };
+  const melding = typeof payload.value === 'string' ? payload.value : '';
+  const rammer = payload.stacktrace?.frames ?? [];
   if (
-    typeof payload.value === 'string' &&
-    payload.value.startsWith(SYNTETISK_LOGGERFEIL_PREFIX)
+    melding.startsWith(SYNTETISK_LOGGERFEIL_PREFIX) ||
+    NETTLESERSTØY.some((mønster) => mønster.test(melding)) ||
+    kommerFraDekoratøren(rammer) ||
+    (MAKS_KALLSTAKK.test(melding) &&
+      pekerBareTilSiden(rammer, sideadresse(hendelse)))
   ) {
     return null;
   }

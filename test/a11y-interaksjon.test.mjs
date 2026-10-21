@@ -110,7 +110,7 @@ const tooltipSkript = (godt) => `
     const tips = document.getElementById('tips');
     let tidtaker;
     const vis = () => { clearTimeout(tidtaker); tips.hidden = false; };
-    const skjul = () => { tidtaker = setTimeout(() => (tips.hidden = true), ${godt ? 150 : 0}); };
+    const skjul = () => { tidtaker = setTimeout(() => (tips.hidden = true), ${godt ? 500 : 0}); };
     u.addEventListener('mouseenter', vis);
     u.addEventListener('mouseleave', skjul);
     u.addEventListener('focus', vis);
@@ -328,6 +328,21 @@ test(
       hoppSide(
         '<a href="#maincontent">Hopp til hovedinnhold</a>',
         '<main id="maincontent"><dialog id="d"><input aria-label="Søk"></dialog></main><script>document.getElementById("d").showModal()</script>',
+      ),
+    );
+    assert.deepEqual(await analyserHoppTilHovedinnhold(page), []);
+  },
+);
+
+test(
+  'hopp til hovedinnhold: venter på lenke som vises etter at skript har kjørt',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySideHtml(
+      t,
+      hoppSide(
+        '<a id="hopp" href="#maincontent" hidden>Hopp til hovedinnhold</a><script>setTimeout(() => (document.getElementById("hopp").hidden = false), 800)</script>',
+        '<main id="maincontent"><a href="/forste">Første</a></main>',
       ),
     );
     assert.deepEqual(await analyserHoppTilHovedinnhold(page), []);

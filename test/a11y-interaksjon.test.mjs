@@ -3,6 +3,7 @@ import test from 'node:test';
 import { chromium } from '@playwright/test';
 import {
   analyserDialog,
+  analyserHoppTilHovedinnhold,
   analyserPekerfølsomtInnhold,
   analyserSkjemafeil,
 } from '../dist/a11y/index.js';
@@ -244,6 +245,92 @@ test(
     const funn = await analyserSkjemafeil(page, page.locator('#send'));
     assert.equal(funn.length, 1, funn.join('\n'));
     assert.match(funn[0], /ingen felt er markert med aria-invalid/);
+  },
+);
+
+const hoppSide = (
+  lenke,
+  main,
+) => `<!doctype html><html lang="nb"><head><title>Test</title></head><body>
+  ${lenke}
+  <header><a href="/meny">Meny</a></header>
+  ${main}
+  <footer><a href="/topp">Til toppen</a></footer>
+</body></html>`;
+
+async function nySideHtml(t, html) {
+  const kontekst = await nettleser.newContext();
+  const page = await kontekst.newPage();
+  t.after(() => kontekst.close());
+  await page.setContent(html);
+  return page;
+}
+
+test(
+  'hopp til hovedinnhold: virker også når main ikke har fokuserbart innhold',
+  { skip: hopp },
+  async (t) => {
+    for (const main of [
+      '<main id="maincontent"><a href="/forste">Første</a></main>',
+      '<main id="maincontent"><h1>Tittel</h1><p>Bare tekst</p></main>',
+    ]) {
+      const page = await nySideHtml(
+        t,
+        hoppSide('<a href="#maincontent">Hopp til hovedinnhold</a>', main),
+      );
+      assert.deepEqual(await analyserHoppTilHovedinnhold(page), []);
+    }
+  },
+);
+
+test(
+  'hopp til hovedinnhold: finner manglende mål',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySideHtml(
+      t,
+      hoppSide(
+        '<a href="#maincontent">Hopp til hovedinnhold</a>',
+        '<main><a href="/forste">Første</a></main>',
+      ),
+    );
+    const funn = await analyserHoppTilHovedinnhold(page);
+    assert.equal(funn.length, 1, funn.join('\n'));
+    assert.match(funn[0], /peker til #maincontent, som ikke finnes/);
+  },
+);
+
+test(
+  'hopp til hovedinnhold: finner side uten lenke først',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySideHtml(
+      t,
+      hoppSide(
+        '',
+        '<main id="maincontent"><a href="/forste">Første</a></main>',
+      ),
+    );
+    const funn = await analyserHoppTilHovedinnhold(page);
+    assert.equal(funn.length, 1, funn.join('\n'));
+    assert.match(
+      funn[0],
+      /første Tab-stopp er ikke en lenke til hovedinnholdet/,
+    );
+  },
+);
+test(
+  'hopp til hovedinnhold: hopper over når en modal er åpen',
+  { skip: hopp },
+  async (t) => {
+    const page = await nySideHtml(
+      t,
+      hoppSide(
+        '<a href="#maincontent">Hopp til hovedinnhold</a>',
+        '<main id="maincontent"><dialog id="d"><input aria-label="Søk"></dialog></main><script>document.getElementById("d").showModal()</script>',
+      ),
+    );
+    assert.deepEqual(await analyserHoppTilHovedinnhold(page), []);
   },
 );
 

@@ -16,15 +16,15 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 ## Eksporter
 
-| Import                              | Innhold                                                                                                       |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `@navikt/toi-next-frontend/api`     | `createFetcher` (retry, timeout, feil-/valideringsfabrikker), `ApiError`, `hentEsKilder`, `hentEsFørsteKilde` |
-| `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`                                                                  |
-| `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                           |
-| `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                        |
-| `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                |
-| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse` (Nais APM uten avhengighet til `@nais/apm`)                    |
-| `@navikt/toi-next-frontend/a11y`    | `tilgjengelighetstest`, `sjekkTilgjengelighet`, `sjekkReflow` (axe-oppsett for WCAG 2.1 A/AA i Playwright)    |
+| Import                              | Innhold                                                                                                                                   |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `@navikt/toi-next-frontend/api`     | `createFetcher` (retry, timeout, feil-/valideringsfabrikker), `ApiError`, `hentEsKilder`, `hentEsFørsteKilde`                             |
+| `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`                                                                                              |
+| `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                                                       |
+| `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                                                    |
+| `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                                            |
+| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse` (Nais APM uten avhengighet til `@nais/apm`)                                                |
+| `@navikt/toi-next-frontend/a11y`    | `tilgjengelighetstest`, `sjekkTilgjengelighet`, `sjekkDialog`, `sjekkPekerfølsomtInnhold`, `sjekkSkjemafeil` (WCAG 2.1 A/AA i Playwright) |
 
 `react`, `swr` og `zod` er peer dependencies. `@playwright/test` og `@axe-core/playwright` er valgfrie peer dependencies og trengs bare for `/a11y`.
 
@@ -96,6 +96,33 @@ Kjører flere apper Playwright samtidig på samme maskin, må hver bruke sin ege
 Innhold som eies av andre team, som dekoratøren, merkes med `data-axe-ignore`. Ikke bruk attributtet for å skjule egne brudd.
 
 Axe kjøres bare i Chromium. Ved funn legges `axe-resultat.json` ved i Playwright-rapporten, også med `incomplete`-funn som må vurderes manuelt.
+
+### Sjekker for interaksjoner
+
+Disse sjekkene utfører en handling på siden og tester resultatet. Kall dem i en vanlig test, gjerne tagget `@a11y`:
+
+```ts
+import {
+  sjekkDialog,
+  sjekkPekerfølsomtInnhold,
+  sjekkSkjemafeil,
+} from '@navikt/toi-next-frontend/a11y';
+
+test('slettemodalen', { tag: '@a11y' }, async ({ page }) => {
+  await sjekkDialog(page, page.getByRole('button', { name: 'Slett' }));
+});
+```
+
+| Funksjon                                         | WCAG                       | Hva sjekkes                                                                                                                                                                             |
+| ------------------------------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sjekkDialog(page, utløser, valg?)`              | 2.1.1, 2.1.2, 2.4.3, 4.1.2 | Åpner dialogen med Enter, sjekker at den har navn, at fokus flyttes inn og blir i modale dialoger, kjører axe på dialogen, lukker med Esc og sjekker at fokus går tilbake til utløseren |
+| `sjekkPekerfølsomtInnhold(page, utløser, valg?)` | 1.4.13                     | Viser innholdet med hover og fokus. Sjekker at pekeren kan flyttes over innholdet uten at det forsvinner, at det blir værende, og at Esc lukker det uten å flytte fokus                 |
+| `sjekkSkjemafeil(page, sendKnapp, valg?)`        | 3.3.1                      | Sender inn skjemaet og sjekker at felt med feil har `aria-invalid`, at feilmeldingen er koblet til med `aria-describedby`, og at lenkene i feiloppsummeringen peker på felt som finnes  |
+
+- `sjekkDialog` tar valget `åpneMed: 'klikk'` for utløsere som ikke åpnes med Enter, `lukkMedEsc: false` for dialoger som med vilje ikke lukkes med Esc, og `fokusEtterLukking` når fokus skal et annet sted enn til utløseren. Den tar også de samme axe-valgene som `sjekkTilgjengelighet`.
+- `sjekkPekerfølsomtInnhold` finner innholdet via `aria-describedby` på utløseren eller som siste synlige `role="tooltip"`. Angi `innhold` ellers.
+- `sjekkSkjemafeil` tar valget `forventFokus: true` for å kreve at fokus flyttes til feiloppsummeringen eller første felt med feil, slik Aksel anbefaler.
+- Alle tre finnes også som `analyser…`-funksjoner som returnerer funn i stedet for å feile.
 
 ### Kjøring i CI
 

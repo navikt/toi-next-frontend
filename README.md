@@ -23,7 +23,7 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 | `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                                                       |
 | `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                                                    |
 | `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                                            |
-| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse` (Nais APM uten avhengighet til `@nais/apm`)                                                |
+| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse`, `DEKORATØR_URLER` (Nais APM uten avhengighet til `@nais/apm`)                             |
 | `@navikt/toi-next-frontend/a11y`    | `tilgjengelighetstest`, `sjekkTilgjengelighet`, `sjekkDialog`, `sjekkPekerfølsomtInnhold`, `sjekkSkjemafeil` (WCAG 2.1 A/AA i Playwright) |
 
 `react`, `swr` og `zod` er peer dependencies. `@playwright/test` og `@axe-core/playwright` er valgfrie peer dependencies og trengs bare for `/a11y`.

@@ -14,6 +14,7 @@ import {
   type Tilgjengelighetsvalg,
 } from './axe.js';
 import { ventTilStabilLayout } from './felles.js';
+import { sjekkHoppTilHovedinnhold } from './hopp.js';
 import { sjekkTastatur, type Tastaturvalg } from './tastatur.js';
 import { sjekkTekstavstand, sjekkTekstforstørrelse } from './tekst.js';
 import { sjekkVisningsretning } from './visningsretning.js';
@@ -28,6 +29,10 @@ export {
   type Tilgjengelighetsvalg,
 } from './axe.js';
 export { analyserDialog, sjekkDialog, type Dialogvalg } from './dialog.js';
+export {
+  analyserHoppTilHovedinnhold,
+  sjekkHoppTilHovedinnhold,
+} from './hopp.js';
 export {
   analyserPekerfølsomtInnhold,
   sjekkPekerfølsomtInnhold,
@@ -122,7 +127,7 @@ export async function sjekkReflow(page: Page): Promise<void> {
 export type Tilgjengelighetstestvalg = Tilgjengelighetsvalg & {
   /**
    * Slår på sjekkene under som ikke er satt: reflow, tekstforstørrelse,
-   * tekstavstand, visningsretning og tastatur. De kjøres i en egen test tagget
+   * tekstavstand, visningsretning, tastatur og hoppTilHovedinnhold. De kjøres i en egen test tagget
    * `@a11y-utvidet`. Sjekker som settes eksplisitt til true, kjøres i hovedtesten
    * sammen med axe, og false slår dem av.
    */
@@ -137,6 +142,8 @@ export type Tilgjengelighetstestvalg = Tilgjengelighetsvalg & {
   visningsretning?: boolean;
   /** WCAG 2.1.1, 2.1.2, 2.4.7 og 3.2.1. */
   tastatur?: boolean | Tastaturvalg;
+  /** WCAG 2.4.1 Hoppe over blokker: lenken «Hopp til hovedinnhold» virker. */
+  hoppTilHovedinnhold?: boolean;
   /** Slår på mørk modus og kjører axe på nytt (WCAG 1.4.3 i mørk modus). */
   mørkModus?: (page: Page) => Promise<void>;
 };
@@ -196,7 +203,8 @@ export const tilgjengelighetstest = <
       | 'tekstforstørrelse'
       | 'tekstavstand'
       | 'visningsretning'
-      | 'tastatur',
+      | 'tastatur'
+      | 'hoppTilHovedinnhold',
     lag: (page: Page, info: TestInfo) => Sjekk,
   ][] = [
     ['reflow', (page) => ['Reflow (1.4.10)', () => sjekkReflow(page)]],
@@ -220,6 +228,13 @@ export const tilgjengelighetstest = <
       (page, info) => [
         'Tastatur (2.1.1, 2.1.2, 2.4.7, 3.2.1)',
         () => sjekkTastatur(page, tastaturvalg, info),
+      ],
+    ],
+    [
+      'hoppTilHovedinnhold',
+      (page) => [
+        'Hopp til hovedinnhold (2.4.1)',
+        () => sjekkHoppTilHovedinnhold(page),
       ],
     ],
   ];

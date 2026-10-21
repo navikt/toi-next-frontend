@@ -67,14 +67,15 @@ axe dekker bare det som kan leses ut av DOM-en. `utvidet: true` slår på sjekke
 tilgjengelighetstest(test, { utvidet: true });
 ```
 
-| Valg                | WCAG                       | Hva sjekkes                                                                                                              |
-| ------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `reflow`            | 1.4.10                     | Ingen horisontal rulling ved 320 px bredde                                                                               |
-| `tekstforstørrelse` | 1.4.4                      | Rot-skriftstørrelsen dobles (som når brukeren øker skriftstørrelsen i nettleseren). Tekst som blir avkuttet, rapporteres |
-| `tekstavstand`      | 1.4.12                     | Linje-, avsnitts-, bokstav- og ordavstand økes etter WCAG. Tekst som blir avkuttet, rapporteres                          |
-| `visningsretning`   | 1.3.4                      | Hovedinnholdet er synlig og ikke rotert i stående og liggende visning                                                    |
-| `tastatur`          | 2.1.1, 2.1.2, 2.4.7, 3.2.1 | Klikkbare elementer som ikke kan nås med Tab, tastaturfeller, manglende synlig fokus og kontekstendring ved fokus        |
-| `mørkModus`         | 1.4.3                      | Funksjon som slår på mørk modus. axe kjøres da på nytt                                                                   |
+| Valg                  | WCAG                       | Hva sjekkes                                                                                                              |
+| --------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `reflow`              | 1.4.10                     | Ingen horisontal rulling ved 320 px bredde                                                                               |
+| `tekstforstørrelse`   | 1.4.4                      | Rot-skriftstørrelsen dobles (som når brukeren øker skriftstørrelsen i nettleseren). Tekst som blir avkuttet, rapporteres |
+| `tekstavstand`        | 1.4.12                     | Linje-, avsnitts-, bokstav- og ordavstand økes etter WCAG. Tekst som blir avkuttet, rapporteres                          |
+| `visningsretning`     | 1.3.4                      | Hovedinnholdet er synlig og ikke rotert i stående og liggende visning                                                    |
+| `tastatur`            | 2.1.1, 2.1.2, 2.4.7, 3.2.1 | Klikkbare elementer som ikke kan nås med Tab, tastaturfeller, manglende synlig fokus og kontekstendring ved fokus        |
+| `hoppTilHovedinnhold` | 2.4.1                      | Første Tab går til «Hopp til hovedinnhold», målet finnes, og neste Tab etter Enter går til hovedinnholdet eller videre   |
+| `mørkModus`           | 1.4.3                      | Funksjon som slår på mørk modus. axe kjøres da på nytt                                                                   |
 
 Sjekkene som bare er slått på via `utvidet`, kjøres i en egen test, «Tilgjengelighet – utvidede sjekker», tagget både `@a11y` og `@a11y-utvidet`. Dermed kan axe stoppe deploy mens de utvidede funnene rettes:
 

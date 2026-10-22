@@ -98,8 +98,10 @@ function finnLangeAnimasjoner({
 /**
  * WCAG 2.2.2 Pause, stopp, skjul: animasjoner som går i det uendelige eller varer
  * lenger enn 5 sekunder. Gir pekepinner: sjekken ser ikke om siden har en
- * knapp for å stoppe animasjonen. Lasteindikatorer merkes, siden de normalt
- * forsvinner når innholdet er lastet.
+ * knapp for å stoppe animasjonen. Lasteindikatorer (Aksel Loader, `role=progressbar`,
+ * `aria-busy` o.l.) som stopper med `prefers-reduced-motion: reduce`, rapporteres
+ * ikke. Lasteindikatorer som ikke stopper, eller når redusert bevegelse ikke er
+ * sjekket, rapporteres og merkes, siden de normalt forsvinner når innholdet er lastet.
  */
 export async function analyserBevegelse(
   page: Page,
@@ -139,7 +141,13 @@ export async function analyserBevegelse(
     }
   }
 
-  return animasjoner.map((a) => {
+  // Lasteindikatorer som stopper med redusert bevegelse er ikke brudd: de forsvinner
+  // når innholdet er lastet, og brukere som ber om det, slipper bevegelsen.
+  const aktuelle = animasjoner.filter(
+    (a) => !(a.lasteindikator && fortsetter && !fortsetter.has(a.nøkkel)),
+  );
+
+  return aktuelle.map((a) => {
     const deler = [
       a.uendelig
         ? `animasjonen «${a.navn}» går i det uendelige`

@@ -27,35 +27,60 @@ export async function analyserHoppTilHovedinnhold(
   );
   if (modalÅpen) return [];
 
-  await page.evaluate(() => {
-    const start = document.createElement('div');
-    start.tabIndex = -1;
-    start.style.cssText =
-      'position:absolute;top:0;left:0;width:0;height:0;overflow:hidden';
-    document.body.prepend(start);
-    start.focus({ preventScroll: true });
-    start.remove();
-  });
-  await page.keyboard.press('Tab');
+  const førsteTabStopp = async () => {
+    await page.evaluate(() => {
+      const start = document.createElement('div');
+      start.tabIndex = -1;
+      start.style.cssText =
+        'position:absolute;top:0;left:0;width:0;height:0;overflow:hidden';
+      document.body.prepend(start);
+      start.focus({ preventScroll: true });
+      start.remove();
+    });
+    await page.keyboard.press('Tab');
 
-  const lenke = await page.evaluate(() => {
-    const hjelp = (window as SideVindu).__toiA11y!;
-    const aktiv = document.activeElement;
-    if (!aktiv || aktiv === document.body) return { feil: 'ingen' } as const;
-    const href = aktiv.getAttribute('href') ?? '';
-    if (aktiv.tagName !== 'A' || !href.startsWith('#') || href.length < 2) {
-      return { feil: 'ikke-lenke', beskrivelse: hjelp.beskriv(aktiv) } as const;
-    }
-    const id = decodeURIComponent(href.slice(1));
-    const mål = document.getElementById(id);
-    if (!mål) return { feil: 'mangler-mål', id } as const;
-    const boks = mål.getBoundingClientRect();
-    if (boks.width === 0 || boks.height === 0) {
-      return { feil: 'skjult-mål', id } as const;
-    }
-    mål.setAttribute('data-toi-a11y-hoppmal', '');
-    return { feil: null, id } as const;
-  });
+    return page.evaluate(() => {
+      const hjelp = (window as SideVindu).__toiA11y!;
+      const aktiv = document.activeElement;
+      if (!aktiv || aktiv === document.body) return { feil: 'ingen' } as const;
+      const href = aktiv.getAttribute('href') ?? '';
+      if (aktiv.tagName !== 'A' || !href.startsWith('#') || href.length < 2) {
+        return {
+          feil: 'ikke-lenke',
+          beskrivelse: hjelp.beskriv(aktiv),
+        } as const;
+      }
+      const id = decodeURIComponent(href.slice(1));
+      const mål = document.getElementById(id);
+      if (!mål) return { feil: 'mangler-mål', id } as const;
+      const boks = mål.getBoundingClientRect();
+      if (boks.width === 0 || boks.height === 0) {
+        return { feil: 'skjult-mål', id } as const;
+      }
+      mål.setAttribute('data-toi-a11y-hoppmal', '');
+      return { feil: null, id } as const;
+    });
+  };
+
+  // Dekoratøren viser lenken først når skriptet har kjørt. Finnes en lenke til et
+  // anker som ennå ikke kan nås, venter vi litt før vi konkluderer.
+  const ventendeLenke = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('a[href^="#"]')].some(
+        (a) =>
+          (a.getAttribute('href') ?? '').length > 1 &&
+          /hopp|hovedinnhold|skip/i.test(a.textContent ?? ''),
+      ),
+    );
+  let lenke = await førsteTabStopp();
+  for (
+    let forsøk = 0;
+    forsøk < 6 && lenke.feil === 'ikke-lenke' && (await ventendeLenke());
+    forsøk++
+  ) {
+    await page.waitForTimeout(500);
+    lenke = await førsteTabStopp();
+  }
 
   if (lenke.feil === 'ingen') {
     return ['WCAG 2.4.1: første Tab gir ikke fokus til noe element'];

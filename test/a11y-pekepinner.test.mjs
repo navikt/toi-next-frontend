@@ -34,7 +34,8 @@ test(
   async (t) => {
     const page = await nySide(
       t,
-      `<main>
+      `<style>input:focus-visible { outline: 3px solid #0067c5 }</style>
+      <main>
       <input id="svak" aria-label="Svak" style="border:1px solid #ddd;background:#fff">
       <input id="god" aria-label="God" style="border:1px solid #767676;background:#fff">
       <input id="fylt" aria-label="Fylt" style="border:0;background:#595959;color:#fff">
@@ -44,7 +45,9 @@ test(
       <div style="background:#000;padding:40px"><input id="mork" aria-label="Mørk" style="border:1px solid #222;background:#000"></div>
     </main>`,
     );
-    const funn = await analyserKontrastIkkeTekst(page);
+    const funn = (await analyserKontrastIkkeTekst(page)).filter((f) =>
+      f.melding.startsWith('kanten'),
+    );
     assert.deepEqual(
       elementer(funn),
       ['input#svak', 'input#oklch', 'input#mork'],
@@ -71,6 +74,8 @@ test(
       #svak-ring:focus-visible { outline: 2px solid #ccc }
       #god-ring:focus-visible { outline: 2px solid #0067c5 }
       #skygge:focus-visible { box-shadow: 0 0 0 3px #eee }
+      /* Slik ser standardringen ut i Chromium på Linux. */
+      #standard:focus-visible { outline: auto 1px rgb(16 16 16) }
     </style>
     <main>
       <button id="lyst" aria-label="Lukk">${ikon('#ccc')}</button>
@@ -79,6 +84,7 @@ test(
       <button id="svak-ring">Svak ring</button>
       <button id="god-ring">God ring</button>
       <button id="skygge">Skygge</button>
+      <div style="background:#000;padding:20px"><a id="standard" href="#">Nettleserens standard fokusring</a></div>
       <button id="ingen-ring">Ingen ring</button>
     </main>`,
     );

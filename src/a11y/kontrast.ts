@@ -254,6 +254,10 @@ function målKontrastIkkeTekst({
     const utenfor = bakgrunnBak(element.parentElement);
     const innenfor = bakgrunnBak(element);
     const målinger: number[] = [];
+    // `outline: auto` er nettleserens standard fokusring. Chromium tegner den i to
+    // farger (mørk ytterkant og lys innerkant), så den synes på alle bakgrunner.
+    // Fargen i outlineColor varierer med plattform og sier ikke noe om kontrasten.
+    if (stil.outlineStyle === 'auto') continue;
     if (stil.outlineStyle !== 'none' && parseFloat(stil.outlineWidth) > 0) {
       const farge = tilRgba(stil.outlineColor);
       const bak = parseFloat(stil.outlineOffset) < 0 ? innenfor : utenfor;

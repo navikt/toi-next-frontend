@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.12.1
+
+### Patch Changes
+
+- a8ab511: `sjekkHoppTilHovedinnhold` venter opptil 3 sekunder når siden har en «Hopp til hovedinnhold»-lenke som ennå ikke kan nås. Dekoratøren viser lenken først når skriptet har kjørt, og sjekken ga derfor av og til falske funn.
+
 ## 0.12.0
 
 ### Minor Changes

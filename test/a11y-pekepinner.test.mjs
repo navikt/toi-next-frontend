@@ -119,7 +119,11 @@ test(
       @keyframes snurr { to { transform: rotate(360deg) } }
       @keyframes blink { 50% { opacity: .5 } }
       #rolig { animation: blink 1s infinite }
-      @media (prefers-reduced-motion: reduce) { #rolig { animation: none } }
+      .aksel-loader__circle,
+      #opptatt > span { animation: snurr 1s linear infinite }
+      @media (prefers-reduced-motion: reduce) {
+        #rolig, .aksel-loader__circle, #opptatt > span { animation: none }
+      }
     </style>
     <main>
       <div id="karusell" style="animation: blink 2s infinite">Karusell</div>
@@ -127,6 +131,8 @@ test(
       <div id="lang" style="animation: blink 8s 1">Lang</div>
       <div id="kort" style="animation: blink 3s 1">Kort</div>
       <div class="navds-loader" style="animation: snurr 1s linear infinite">Laster</div>
+      <svg class="aksel-loader" viewBox="0 0 50 50" width="50" height="50"><title>Laster...</title><circle class="aksel-loader__circle" cx="25" cy="25" r="20" /></svg>
+      <div id="opptatt" aria-busy="true"><span style="display:inline-block">Henter</span></div>
       <div data-axe-ignore style="animation: snurr 1s infinite">Dekoratør</div>
       <div style="display:none;animation: snurr 1s infinite">Skjult</div>
     </main>`,
@@ -149,7 +155,16 @@ test(
       /men stopper med prefers-reduced-motion/,
     );
     assert.match(meldinger['div#lang'], /varer 8 s/);
-    assert.match(meldinger['div.navds-loader'], /trolig lasteindikator/);
+    assert.match(
+      meldinger['div.navds-loader'],
+      /stopper ikke med prefers-reduced-motion.*trolig lasteindikator/,
+    );
+
+    const uten = await analyserBevegelse(page, { redusertBevegelse: false });
+    const lastere = uten.filter((f) =>
+      f.melding.includes('trolig lasteindikator'),
+    );
+    assert.equal(lastere.length, 3, JSON.stringify(uten, null, 2));
     assert.equal(
       await page.evaluate(
         () => matchMedia('(prefers-reduced-motion: reduce)').matches,

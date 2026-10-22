@@ -15,6 +15,7 @@ import {
 } from './axe.js';
 import { ventTilStabilLayout } from './felles.js';
 import { sjekkHoppTilHovedinnhold } from './hopp.js';
+import { sjekkPekepinner, type Pekepinnvalg } from './pekepinner.js';
 import { sjekkTastatur, type Tastaturvalg } from './tastatur.js';
 import { sjekkTekstavstand, sjekkTekstforstørrelse } from './tekst.js';
 import { sjekkVisningsretning } from './visningsretning.js';
@@ -28,11 +29,36 @@ export {
   type Axeresultat,
   type Tilgjengelighetsvalg,
 } from './axe.js';
+export {
+  analyserBevegelse,
+  BEVEGELSE_GRENSE_MS,
+  type Bevegelsesvalg,
+} from './bevegelse.js';
 export { analyserDialog, sjekkDialog, type Dialogvalg } from './dialog.js';
+export { ventTilStabilLayout, type Pekepinn } from './felles.js';
 export {
   analyserHoppTilHovedinnhold,
   sjekkHoppTilHovedinnhold,
 } from './hopp.js';
+export {
+  analyserKontrastIkkeTekst,
+  KONTRAST_IKKE_TEKST_KRAV,
+  type Kontrastvalg,
+} from './kontrast.js';
+export {
+  analyserLandemerker,
+  LANDEMERKEREGLER,
+  type Landemerkevalg,
+} from './landemerker.js';
+export {
+  analyserPekepinner,
+  formaterPekepinner,
+  PEKEPINN_ANNOTASJON,
+  rapporterPekepinner,
+  sjekkPekepinner,
+  type Pekepinnresultat,
+  type Pekepinnvalg,
+} from './pekepinner.js';
 export {
   analyserPekerfølsomtInnhold,
   sjekkPekerfølsomtInnhold,
@@ -43,6 +69,7 @@ export {
   sjekkSkjemafeil,
   type Skjemafeilvalg,
 } from './skjemafeil.js';
+export { analyserSpråk, type Språkvalg } from './sprak.js';
 export {
   analyserTastatur,
   formaterTastaturfunn,
@@ -146,6 +173,12 @@ export type Tilgjengelighetstestvalg = Tilgjengelighetsvalg & {
   hoppTilHovedinnhold?: boolean;
   /** Slår på mørk modus og kjører axe på nytt (WCAG 1.4.3 i mørk modus). */
   mørkModus?: (page: Page) => Promise<void>;
+  /**
+   * Sjekker som gir pekepinner (1.4.11, 2.2.2, 3.1.2 og landemerker). Funnene
+   * rapporteres som annotations og vedlegg og feiler aldri testen. Kjøres i en
+   * egen test tagget `@a11y-pekepinn`. Standard: på når `utvidet` er på.
+   */
+  pekepinner?: boolean | Pekepinnvalg;
 };
 
 const feilmelding = (feil: unknown) => {
@@ -181,6 +214,9 @@ async function kjørSjekker(
 /** Tag for testen med sjekkene som bare er slått på via `utvidet: true`. */
 export const UTVIDET_TILGJENGELIGHETSTAG = '@a11y-utvidet';
 
+/** Tag for testen med pekepinner. Testen feiler aldri. */
+export const PEKEPINN_TILGJENGELIGHETSTAG = '@a11y-pekepinn';
+
 /**
  * Registrerer tester for siden `beforeEach` har åpnet. Kjøres kun i Chromium.
  *
@@ -188,6 +224,8 @@ export const UTVIDET_TILGJENGELIGHETSTAG = '@a11y-utvidet';
  * - «Tilgjengelighet – utvidede sjekker» (`@a11y` og `@a11y-utvidet`): sjekkene som bare er
  *   slått på med `utvidet: true`. De kan dermed kjøres uten å stoppe deploy
  *   (`--grep-invert @a11y-utvidet`) mens funnene rettes.
+ * - «Tilgjengelighet – pekepinner» (`@a11y`, `@a11y-utvidet` og `@a11y-pekepinn`): sjekker
+ *   som ikke er kalibrert. Funnene vises som annotations og vedlegg, og testen feiler aldri.
  */
 export const tilgjengelighetstest = <
   T extends PlaywrightTestArgs,
@@ -279,6 +317,32 @@ export const tilgjengelighetstest = <
         await kjørSjekker(
           test,
           viaUtvidet.map(([, lag]) => lag(page, info)),
+        );
+      },
+    );
+  }
+
+  const pekepinner = valg.pekepinner ?? (valg.utvidet === true ? true : false);
+  if (pekepinner !== false) {
+    const pekepinnvalg: Pekepinnvalg = {
+      ekskluder: valg.ekskluder,
+      ...(typeof pekepinner === 'object' ? pekepinner : {}),
+    };
+    test(
+      'Tilgjengelighet – pekepinner',
+      {
+        tag: [
+          TILGJENGELIGHETSTAG,
+          UTVIDET_TILGJENGELIGHETSTAG,
+          PEKEPINN_TILGJENGELIGHETSTAG,
+        ],
+      },
+      async ({ page, browserName }) => {
+        test.skip(browserName !== 'chromium', 'Kjøres kun i Chromium');
+        await test.step(
+          'Pekepinner (1.4.11, 2.2.2, 3.1.2, landemerker)',
+          () => sjekkPekepinner(page, pekepinnvalg, test.info()),
+          { box: true },
         );
       },
     );

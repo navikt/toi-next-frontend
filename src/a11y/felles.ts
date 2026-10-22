@@ -67,25 +67,64 @@ export async function installerSidehjelpere(page: Page): Promise<void> {
 }
 
 /**
+ * Funn fra sjekkene som gir pekepinner. De feiler ikke testen før de er
+ * kalibrert, men rapporteres som annotations og vedlegg i Playwright-rapporten.
+ */
+export type Pekepinn = {
+  kriterium: string;
+  sjekk: 'kontrast-ikke-tekst' | 'bevegelse' | 'språk' | 'landemerker';
+  element: string;
+  melding: string;
+};
+
+const erNavigasjonsfeil = (feil: unknown) =>
+  feil instanceof Error &&
+  /Execution context was destroyed|navigat/i.test(feil.message);
+
+/**
  * Venter til DOM og størrelser har vært uendret i `stabilMs`. JS som reagerer på
  * resize eller endret skriftstørrelse (f.eks. React med ResizeObserver) kan endre
  * siden flere hundre millisekunder etter selve endringen. Gir opp etter `maksMs`
  * på sider som aldri blir rolige.
+ *
+ * Navigerer siden mens vi venter (f.eks. en omdirigering på klientsiden), finnes
+ * det et øyeblikk ikke noe dokument å observere. Da ventes det på det nye
+ * dokumentet og prøves på nytt.
  */
 export async function ventTilStabilLayout(
   page: Page,
   { stabilMs = 600, maksMs = 4000 } = {},
 ): Promise<void> {
-  await page.evaluate(
+  for (let forsøk = 1; ; forsøk++) {
+    try {
+      const observert = await observerTilStabil(page, stabilMs, maksMs);
+      if (observert || forsøk >= 3) return;
+    } catch (feil) {
+      if (forsøk >= 3 || !erNavigasjonsfeil(feil)) throw feil;
+    }
+    await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+  }
+}
+
+async function observerTilStabil(
+  page: Page,
+  stabilMs: number,
+  maksMs: number,
+): Promise<boolean> {
+  return page.evaluate(
     ({ stabil, maks }) =>
-      new Promise<void>((resolve) => {
+      new Promise<boolean>((resolve) => {
+        if (!document.documentElement || !document.body) {
+          resolve(false);
+          return;
+        }
         let ro: ReturnType<typeof setTimeout> | undefined;
         const ferdig = () => {
           mutasjoner.disconnect();
           størrelser.disconnect();
           clearTimeout(ro);
           clearTimeout(grense);
-          resolve();
+          resolve(true);
         };
         const nullstill = () => {
           clearTimeout(ro);

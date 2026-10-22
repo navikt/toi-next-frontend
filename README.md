@@ -16,17 +16,18 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 ## Eksporter
 
-| Import                              | Innhold                                                                                                                                   |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `@navikt/toi-next-frontend/api`     | `createFetcher` (retry, timeout, feil-/valideringsfabrikker), `ApiError`, `hentEsKilder`, `hentEsFørsteKilde`                             |
-| `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`                                                                                              |
-| `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                                                       |
-| `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                                                    |
-| `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                                            |
-| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse`, `DEKORATØR_URLER` (Nais APM uten avhengighet til `@nais/apm`)                             |
-| `@navikt/toi-next-frontend/a11y`    | `tilgjengelighetstest`, `sjekkTilgjengelighet`, `sjekkDialog`, `sjekkPekerfølsomtInnhold`, `sjekkSkjemafeil` (WCAG 2.1 A/AA i Playwright) |
+| Import                              | Innhold                                                                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@navikt/toi-next-frontend/api`     | `createFetcher` (retry, timeout, feil-/valideringsfabrikker), `ApiError`, `hentEsKilder`, `hentEsFørsteKilde`                                                |
+| `@navikt/toi-next-frontend/next`    | `opprettOboProxy`, `startMswInstrumentering`                                                                                                                 |
+| `@navikt/toi-next-frontend/swr`     | `SWRLaster`, `useSWRGet`, `useSWRPost`, `useSWRPut`                                                                                                          |
+| `@navikt/toi-next-frontend/miljo`   | `erLokalt`, `erTestmodus`, `skalMocke`                                                                                                                       |
+| `@navikt/toi-next-frontend/analyse` | `lagUmami`, `byggSporingsdata`                                                                                                                               |
+| `@navikt/toi-next-frontend/apm`     | `lagApmFeilrapportering`, `filtrerApmHendelse`, `DEKORATØR_URLER` (Nais APM uten avhengighet til `@nais/apm`)                                                |
+| `@navikt/toi-next-frontend/a11y`    | `tilgjengelighetstest`, `sjekkTilgjengelighet`, `sjekkDialog`, `sjekkPekerfølsomtInnhold`, `sjekkSkjemafeil`, `sjekkPekepinner` (WCAG 2.1 A/AA i Playwright) |
+| `@navikt/toi-next-frontend/eslint`  | `anbefalt` (flat config) med regelen `toi-a11y/ingen-handling-ved-pekerned` (WCAG 2.5.2)                                                                     |
 
-`react`, `swr` og `zod` er peer dependencies. `@playwright/test` og `@axe-core/playwright` er valgfrie peer dependencies og trengs bare for `/a11y`.
+`react`, `swr` og `zod` er peer dependencies. `@playwright/test` og `@axe-core/playwright` er valgfrie peer dependencies og trengs bare for `/a11y`. `eslint` (9 eller nyere) er valgfri og trengs bare for `/eslint`.
 
 ## Tilgjengelighetstester (`/a11y`)
 
@@ -76,6 +77,7 @@ tilgjengelighetstest(test, { utvidet: true });
 | `tastatur`            | 2.1.1, 2.1.2, 2.4.7, 3.2.1 | Klikkbare elementer som ikke kan nås med Tab, tastaturfeller, manglende synlig fokus og kontekstendring ved fokus        |
 | `hoppTilHovedinnhold` | 2.4.1                      | Første Tab går til «Hopp til hovedinnhold», målet finnes, og neste Tab etter Enter går til hovedinnholdet eller videre   |
 | `mørkModus`           | 1.4.3                      | Funksjon som slår på mørk modus. axe kjøres da på nytt                                                                   |
+| `pekepinner`          | 1.4.11, 2.2.2, 3.1.2       | Gir pekepinner uten å feile testen. Se [Pekepinner](#pekepinner)                                                         |
 
 Sjekkene som bare er slått på via `utvidet`, kjøres i en egen test, «Tilgjengelighet – utvidede sjekker», tagget både `@a11y` og `@a11y-utvidet`. Dermed kan axe stoppe deploy mens de utvidede funnene rettes:
 
@@ -97,6 +99,46 @@ Kjører flere apper Playwright samtidig på samme maskin, må hver bruke sin ege
 Innhold som eies av andre team, som dekoratøren, merkes med `data-axe-ignore`. Ikke bruk attributtet for å skjule egne brudd.
 
 Axe kjøres bare i Chromium. Ved funn legges `axe-resultat.json` ved i Playwright-rapporten, også med `incomplete`-funn som må vurderes manuelt.
+
+### Pekepinner
+
+Noen kriterier kan ikke måles sikkert nok til å stoppe deploy før vi har sett hvor mye støy de gir i appene våre. Disse sjekkene gir pekepinner: funnene vises i Playwright-rapporten, men testen feiler aldri.
+
+```ts
+tilgjengelighetstest(test, { utvidet: true }); // pekepinner er på når utvidet er på
+tilgjengelighetstest(test, { pekepinner: true }); // eller slå dem på for seg
+tilgjengelighetstest(test, { utvidet: true, pekepinner: { språk: false } });
+```
+
+De kjøres i en egen test, «Tilgjengelighet – pekepinner», tagget `@a11y`, `@a11y-utvidet` og `@a11y-pekepinn`. Den blir dermed med i `test:a11y`, men ikke i jobben som stopper deploy (`--grep-invert @a11y-utvidet`). Hvert funn legges til som annotation av typen `a11y-pekepinn` (maks 30 per test), og alle funn legges ved som `a11y-pekepinner.json`. En sjekk som krasjer, gir en annotation av typen `a11y-pekepinn-feil` i stedet for å stoppe de andre.
+
+| Valg                | WCAG   | Hva sjekkes                                                                                                                                                           |
+| ------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kontrastIkkeTekst` | 1.4.11 | Kanten på skjemafelt, ikoner i knapper og lenker uten tekst (og svg med navn) og fokusringen (outline eller ring med `box-shadow`) har minst 3:1 mot bakgrunnen rundt |
+| `bevegelse`         | 2.2.2  | Animasjoner fra `document.getAnimations()` som går i det uendelige eller varer lenger enn 5 sekunder. Sier også om de stopper med `prefers-reduced-motion: reduce`    |
+| `språk`             | 3.1.2  | Tekstblokker som ser ut til å være på et annet språk enn `lang` sier, for eksempel engelsk tekst i en stillingsannonse uten `lang="en"`                               |
+| `landemerker`       | 1.3.1  | Axe-reglene `landmark-no-duplicate-main` og `landmark-main-is-top-level`. De er `best-practice` i axe og ikke med i WCAG-kjøringen                                    |
+
+Alle er på som standard når pekepinnene kjøres. `false` slår av en sjekk. `ekskluder` fra hovedvalgene gjelder også her.
+
+- **Kontrast** regnes ut mot bakgrunnsfargen bak elementet (fargene oppover i treet lagt sammen), ikke mot hver piksel ved siden av. Elementer med bakgrunnsbilde eller gradient bak seg hoppes over. Kanten kan ligge på en omslutter som er omtrent like høy som feltet, slik Aksel Combobox gjør. Fokusringen måles på opptil 100 elementer, og fokus settes tilbake etterpå. Mangler fokusringen helt, er det `tastatur` (2.4.7) som fanger det.
+- **Bevegelse**: lasteindikatorer (`role="progressbar"`, `aria-busy`, klasser med `loader`, `spinner` eller `skeleton`) merkes «trolig lasteindikator». Sjekken ser ikke om siden har en knapp for å stoppe animasjonen. Den kjøres før de andre sjekkene, siden axe spoler endelige animasjoner til slutt.
+- **Språk** gjettes ut fra vanlige småord på norsk (bokmål og nynorsk regnes som ett språk), svensk og engelsk. Blokker med under 8 ord vurderes ikke, og et språk må ha minst 3 treff og dobbelt så mange som det nest beste. Vi valgte dette framfor et bibliotek som `franc` fordi det ikke gir nye avhengigheter, kjører i nettleseren, og fordi slike biblioteker skiller dårlig mellom norsk, dansk og svensk i korte tekster. Det vi trenger å finne, er tekst på et helt annet språk enn siden.
+
+Hver sjekk finnes også som egen funksjon som returnerer funn: `analyserKontrastIkkeTekst`, `analyserBevegelse`, `analyserSpråk` og `analyserLandemerker`. `sjekkPekepinner(page, valg?)` kjører alle og rapporterer til testen som kjører, for eksempel etter at en modal er åpnet.
+
+### ESLint: pekeravbrytelse (`/eslint`)
+
+WCAG 2.5.2 handler om at handlinger skal skje når pekeren slippes, slik at brukeren kan angre ved å flytte pekeren bort først. Det ser vi best i koden. Regelen `toi-a11y/ingen-handling-ved-pekerned` varsler om `onMouseDown` og `onPointerDown` i JSX og `addEventListener('mousedown' | 'pointerdown')`:
+
+```js
+// eslint.config.mjs
+import { anbefalt as toiA11y } from '@navikt/toi-next-frontend/eslint';
+
+export default defineConfig([...nextConfig, ...nextTypescript, toiA11y]);
+```
+
+`anbefalt` slår på regelen som `warn`, så den stopper ikke bygget. Regelen godtar handlere som bare kaller `preventDefault()` eller `stopPropagation()` (vanlig for å hindre at fokus flyttes), og elementer som også lytter på opp- eller flytt-hendelser (dra og slipp). Andre unntak markeres med `// eslint-disable-next-line toi-a11y/ingen-handling-ved-pekerned -- begrunnelse`. Med valget `hendelser` kan flere hendelser tas med, for eksempel `['onMouseDown', 'onPointerDown', 'onTouchStart']`.
 
 ### Sjekker for interaksjoner
 

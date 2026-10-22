@@ -1,5 +1,11 @@
 # @navikt/toi-next-frontend
 
+## 0.13.1
+
+### Patch Changes
+
+- fe718f1: Færre falske pekepinner: 2.2.2 rapporterer ikke lenger lasteindikatorer som stopper med `prefers-reduced-motion`, og ESLint-regelen `toi-a11y/ingen-handling-ved-pekerned` godtar navngitte handlere som bare stopper hendelsen (f.eks. `stopAllPropagation`).
+
 ## 0.13.0
 
 ### Minor Changes

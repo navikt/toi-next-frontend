@@ -17,6 +17,13 @@ const NETTLESERSTØY = [
 ];
 
 const MAKS_KALLSTAKK = /Maximum call stack size exceeded/;
+const NETTVERKSFEIL = /^(Load failed|Failed to fetch)$/;
+const OTEL_FETCH_RAMME =
+  /\/node_modules\/@opentelemetry\/(instrumentation-fetch|sdk-trace|sdk-trace-web|api)\//;
+const NOTIFIKASJON_WIDGET_RAMME =
+  /\/node_modules\/@navikt\/arbeidsgiver-notifikasjon-widget\//;
+const SESJON_URL =
+  /^(https:\/\/login\.nav\.no\/oauth2\/session(?:[/?#]|$)|\/oauth2\/session(?:[?#]|$))/;
 
 export interface ApmFeilkontekst {
   statuskode?: number;
@@ -119,6 +126,23 @@ export function lagApmFeilrapportering({
 }
 
 export function filtrerApmHendelse<T extends ApmHendelse>(hendelse: T): T | null {
+  if (hendelse.type === 'event') {
+    const payload = hendelse.payload as {
+      name?: unknown;
+      attributes?: Record<string, unknown>;
+    };
+    const url = payload.attributes?.['url.full'];
+    const status = payload.attributes?.['http.response.status_code'];
+    if (
+      payload.name === 'faro.tracing.fetch' &&
+      typeof url === 'string' &&
+      SESJON_URL.test(url) &&
+      (status === '0' || status === 0 || status === '401' || status === 401)
+    ) {
+      return null;
+    }
+    return hendelse;
+  }
   if (hendelse.type !== 'exception') return hendelse;
   const payload = hendelse.payload as {
     value?: unknown;
@@ -131,6 +155,17 @@ export function filtrerApmHendelse<T extends ApmHendelse>(hendelse: T): T | null
     melding.startsWith(SYNTETISK_LOGGERFEIL_PREFIX) ||
     NETTLESERSTØY.some((mønster) => mønster.test(melding)) ||
     kommerFraDekoratøren(rammer) ||
+    (NETTVERKSFEIL.test(melding) &&
+      rammer.every(
+        ({ filename }) =>
+          typeof filename === 'string' && OTEL_FETCH_RAMME.test(filename),
+      )) ||
+    (melding === 'Response not successful: Received status code 401' &&
+      rammer.some(
+        ({ filename }) =>
+          typeof filename === 'string' &&
+          NOTIFIKASJON_WIDGET_RAMME.test(filename),
+      )) ||
     (MAKS_KALLSTAKK.test(melding) &&
       pekerBareTilSiden(rammer, sideadresse(hendelse)))
   ) {

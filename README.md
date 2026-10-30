@@ -29,6 +29,20 @@ Prosjekter uten en eksisterende `@navikt`-registry-konfigurasjon trenger følgen
 
 `react`, `swr` og `zod` er peer dependencies. `@playwright/test` og `@axe-core/playwright` er valgfrie peer dependencies og trengs bare for `/a11y`. `eslint` (9 eller nyere) er valgfri og trengs bare for `/eslint`.
 
+## APM (`/apm`)
+
+Sett `beforeSend: filtrerApmHendelse` i `initNaisAPMClient`. Filteret forkaster blant annet:
+
+- `faro.tracing.fetch` med status 0 eller 401 mot `https://login.nav.no/oauth2/session` (og understier) eller den relative adressen `/oauth2/session`.
+- «Load failed» og «Failed to fetch» uten stacktrace eller med rammer bare fra OpenTelemetry-fetch og tilhørende kontekst- og tracing-kode.
+- «Response not successful: Received status code 401» med stacktrace til `@navikt/arbeidsgiver-notifikasjon-widget`.
+
+Nettverksfeil med en ramme fra appen eller ukjent kode sendes fortsatt. Filteret beholder også andre statuser fra sesjonsendepunktet, fetch-feil mot appens API-er og andre feil fra widgeten.
+
+Faro sender rå stacktraces til `beforeSend`. Loki kan vise sourcemappede filnavn som ikke finnes i klientens stacktrace. Filtrene for OpenTelemetry og widgeten virker bare når filnavnene identifiserer pakkene. Når stacken bare viser hash-navngitte produksjonsbundler, sendes feilene fortsatt. Det hindrer at filteret skjuler appfeil, men betyr at ikke all widget- og nettverksstøy i Loki forsvinner.
+
+Fetch-hendelsene går gjennom `beforeSend` som `type: 'event'`, med `payload.name: 'faro.tracing.fetch'` og attributtene `url.full` og `http.response.status_code`. Loki viser disse som `event_data_url_full` og `event_data_http_response_status_code`. Ikke legg sesjonsendepunktet i `faro.ignoreUrls`: det ville også fjernet andre statuser og tracing for disse kallene. `DEKORATØR_URLER` kan fortsatt brukes i `faro.ignoreUrls` for Dekoratørens egne adresser.
+
 ## Tilgjengelighetstester (`/a11y`)
 
 Alle Toi-frontender skal oppfylle WCAG 2.1 nivå A og AA. `/a11y` gir et felles oppsett for axe-core i Playwright (samme verktøy som Aksel bruker), slik at reglene og rapporteringen er like i alle apper.

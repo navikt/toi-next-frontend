@@ -48,6 +48,23 @@ const SIDE = 'https://www.nav.no/rekrutteringstreff-bruker/treff/123';
 const DEKORATØR_SKRIPT =
   'https://cdn.nav.no/personbruker/nav-dekoratoren/client-abc123.js';
 const APP_SKRIPT = 'https://www.nav.no/_next/static/chunks/app-abc123.js';
+const OTEL_FETCH_STAKK = [
+  'turbopack:///[project]/node_modules/.pnpm/@opentelemetry+sdk-trace@2.11.0_@opentelemetry+api@1.9.1/node_modules/@opentelemetry/sdk-trace/src/Span.ts',
+  'turbopack:///[project]/node_modules/.pnpm/@opentelemetry+sdk-trace-web@2.11.0_@opentelemetry+api@1.9.1/node_modules/@opentelemetry/sdk-trace-web/src/StackContextManager.ts',
+  'turbopack:///[project]/node_modules/.pnpm/@opentelemetry+api@1.9.1/node_modules/@opentelemetry/api/src/api/context.ts',
+  'turbopack:///[project]/node_modules/.pnpm/@opentelemetry+instrumentation-fetch@0.222.0_@opentelemetry+api@1.9.1_supports-color@7.2.0/node_modules/@opentelemetry/instrumentation-fetch/src/fetch.ts',
+];
+const WIDGET_STAKK = [
+  'turbopack:///[project]/node_modules/.pnpm/@navikt+arbeidsgiver-notifikasjon-widget@8.0.5/node_modules/@navikt/arbeidsgiver-notifikasjon-widget/dist/graphql-BXcTGBMJ.js',
+];
+
+const lagFetchHendelse = (url, status) => ({
+  type: 'event',
+  payload: {
+    name: 'faro.tracing.fetch',
+    attributes: { 'url.full': url, 'http.response.status_code': status },
+  },
+});
 
 const medStakk = (value, filnavn, sideUrl = SIDE) => ({
   type: 'exception',
@@ -95,8 +112,138 @@ test('filtrerApmHendelse dropper feil med stacktrace til Dekoratøren', () => {
 });
 
 test('filtrerApmHendelse beholder feil fra appen', () => {
-  const hendelse = medStakk('Failed to fetch', [APP_SKRIPT]);
-  assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  for (const melding of ['Failed to fetch', 'Load failed']) {
+    for (const stakk of [
+      [APP_SKRIPT],
+      [...OTEL_FETCH_STAKK, 'turbopack:///[project]/app/api/fetcher.ts'],
+      [...OTEL_FETCH_STAKK, APP_SKRIPT],
+    ]) {
+      const hendelse = medStakk(melding, stakk);
+      assert.equal(filtrerApmHendelse(hendelse), hendelse);
+    }
+  }
+});
+
+test('filtrerApmHendelse dropper sesjons-fetch med status 0 eller 401', () => {
+  for (const url of [
+    'https://login.nav.no/oauth2/session',
+    'https://login.nav.no/oauth2/session/refresh',
+    'https://login.nav.no/oauth2/session?refresh=true',
+    '/oauth2/session',
+    '/oauth2/session?refresh=true',
+  ]) {
+    for (const status of ['0', '401', 0, 401]) {
+      assert.equal(filtrerApmHendelse(lagFetchHendelse(url, status)), null);
+    }
+  }
+});
+
+test('filtrerApmHendelse beholder andre statuser og fetch-feil fra appen', () => {
+  for (const status of ['200', '403', '500', undefined]) {
+    const hendelse = lagFetchHendelse(
+      'https://login.nav.no/oauth2/session',
+      status,
+    );
+    assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  }
+  for (const url of [
+    '/api/logger',
+    '/api/treff/svar',
+    'https://www.nav.no/api/treff/svar',
+    'https://www.nav.no/oauth2/session',
+    'https://login.nav.no/oauth2/session-feil',
+    'https://login.nav.no.annet.no/oauth2/session',
+    '/api?redirect=/oauth2/session',
+    undefined,
+  ]) {
+    for (const status of ['0', '401']) {
+      const hendelse = lagFetchHendelse(url, status);
+      assert.equal(filtrerApmHendelse(hendelse), hendelse);
+    }
+  }
+  for (const name of ['faro.tracing.xml-http-request', 'app.hendelse', undefined]) {
+    const hendelse = lagFetchHendelse('/oauth2/session', '401');
+    hendelse.payload.name = name;
+    assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  }
+  const utenAttributter = { type: 'event', payload: { name: 'faro.tracing.fetch' } };
+  assert.equal(filtrerApmHendelse(utenAttributter), utenAttributter);
+});
+
+test('filtrerApmHendelse dropper «Load failed» uten app-stacktrace', () => {
+  assert.equal(filtrerApmHendelse(lagFeilhendelse('Load failed')), null);
+  assert.equal(filtrerApmHendelse(medStakk('Load failed', [])), null);
+  assert.equal(
+    filtrerApmHendelse(medStakk('Load failed', OTEL_FETCH_STAKK)),
+    null,
+  );
+});
+
+test('filtrerApmHendelse dropper «Failed to fetch» uten app-stacktrace', () => {
+  assert.equal(filtrerApmHendelse(lagFeilhendelse('Failed to fetch')), null);
+  assert.equal(filtrerApmHendelse(medStakk('Failed to fetch', [])), null);
+  assert.equal(
+    filtrerApmHendelse(medStakk('Failed to fetch', OTEL_FETCH_STAKK)),
+    null,
+  );
+});
+
+test('filtrerApmHendelse beholder ukjente stakkrammer og andre nettverksmeldinger', () => {
+  for (const melding of ['Load failed', 'Failed to fetch']) {
+    for (const filename of [
+      undefined,
+      '',
+      'https://cdn.nav.no/annet/klient.js',
+      'turbopack:///[project]/node_modules/@opentelemetry/annet/index.js',
+      'turbopack:///[project]/app/@opentelemetry/instrumentation-fetch/egen.ts',
+    ]) {
+      const hendelse = medStakk(melding, [...OTEL_FETCH_STAKK, filename]);
+      assert.equal(filtrerApmHendelse(hendelse), hendelse);
+    }
+  }
+  for (const melding of ['Failed to fetch kandidat', 'Load failed: appfeil']) {
+    const hendelse = lagFeilhendelse(melding);
+    assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  }
+});
+
+test('filtrerApmHendelse dropper 401 fra arbeidsgiver-notifikasjon-widget', () => {
+  assert.equal(
+    filtrerApmHendelse(
+      medStakk('Response not successful: Received status code 401', WIDGET_STAKK),
+    ),
+    null,
+  );
+});
+
+test('filtrerApmHendelse beholder appens 401 og andre feil fra widgeten', () => {
+  const melding = 'Response not successful: Received status code 401';
+  for (const stakk of [[], [APP_SKRIPT], OTEL_FETCH_STAKK]) {
+    const hendelse = medStakk(melding, stakk);
+    assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  }
+  for (const melding of [
+    'Response not successful: Received status code 500',
+    'Response not successful: Received status code 403',
+    'Failed to fetch',
+    'Uventet feil',
+  ]) {
+    const hendelse = medStakk(melding, WIDGET_STAKK);
+    assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  }
+});
+
+test('filtrerApmHendelse beholder feil i produksjonsbundler uten kjente kildefilnavn', () => {
+  for (const melding of [
+    'Load failed',
+    'Failed to fetch',
+    'Response not successful: Received status code 401',
+  ]) {
+    const hendelse = medStakk(melding, [
+      'https://cdn.nav.no/toi/presenterte-kandidater/_next/static/chunks/0g-qt4ced-fs9.js',
+    ]);
+    assert.equal(filtrerApmHendelse(hendelse), hendelse);
+  }
 });
 
 test('filtrerApmHendelse dropper window.ethereum-feil', () => {
